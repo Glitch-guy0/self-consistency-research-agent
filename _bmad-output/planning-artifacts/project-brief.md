@@ -11,7 +11,7 @@ A CLI-based self-consistency research agent built with Node.js/TypeScript (ESM).
 
 ## Architecture Style
 
-Hexagonal (ports & adapters) — the core LLM provider is abstracted behind an interface with pluggable adapters for web search and note-taking. This provides configuration optionality for scale.
+Hexagonal (ports & adapters) — every adapter follows the composition pattern. The orchestrator composes only the adapters that are configured and available. Missing API keys don't throw errors; the adapter simply isn't composed and the system degrades gracefully.
 
 The LLM provider implementation wraps the OpenAI SDK. At execution time it builds an OpenAI execution object with configurable `baseUrl`, `model`, and `apiKey` — all exposed at the top configuration layer.
 
@@ -25,7 +25,8 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 | Language | TypeScript 6.0.3 (strict) |
 | Core deps | OpenAI SDK, Zod, Chalk |
 | LLM Provider | OpenAI (via SDK) |
-| Web Search | Jina Search API |
+| Web Search | Jina Search API (optional — composed only if API key present) |
+| Jira | Jira REST API (optional — composed only if API key present) |
 | Session Store | In-memory KV (session dictionary) |
 | TUI | Chalk + terminal |
 
@@ -36,7 +37,8 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 - **Research Agents** — 3 concurrent LLM Agent Wrapper instances, each with its own `{websearch, note}` tools + research system prompt + private notebook
 - **Validation Agent** — single LLM Agent Wrapper instance with its own `{note}` tool only + validation system prompt + private notebook (no web search)
 - **LLM Provider** — wraps OpenAI SDK; builds an execution object at runtime with configurable `baseUrl`, `model`, `apiKey`. These configs are exposed at the top layer (orchestrator / agent factory).
-- **Web Search Adapter** — wraps Jina Search API (search + content parsing)
+- **Web Search Adapter** — wraps Jina Search API (search + content parsing). Optional — composed only if JINA_API_KEY is present. Falls back to agent internal knowledge when disabled, with a warning notification.
+- **Jira Adapter** — wraps Jira REST API for querying project data. Optional — composed only if JIRA_API_KEY is present. If missing, the adapter is excluded from composition (no error).
 - **Note Tool Adapter** — per-agent KV dictionary scoped to that agent instance; each agent's notebook is isolated within the shared in-memory KV cache
 - **Session Manager** — in-memory KV dictionary for session lifecycle; backed by the same shared in-memory KV cache as the note tool (implements SessionPort; swappable for Redis later)
 - **TUI Manager** — terminal UI layer with:
@@ -45,6 +47,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
   - `_truncateLength()` — *(private)* calculates truncation boundary based on terminal dimensions
   - `output(string)` — displays final agent output
   - `input(placeholder)` — prompts user for input with a placeholder string
+  - `warn(message)` — displays a warning notification (e.g., "websearch disabled, falling back to internal knowledge")
 
 ## Session Lifecycle
 
@@ -53,7 +56,9 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 
 ## Agent Tools
 
-- **websearch:** Jina Search API (query → markdown results) — available to research agents only
+All adapters follow the composition pattern:
+- **websearch:** Jina Search API (query → markdown results) — available to research agents only. Optional. If `JINA_API_KEY` is not set, the adapter is omitted and the agent falls back to internal knowledge. A warning is shown via `warn()`.
+- **jira:** Jira REST API — optional. If `JIRA_API_KEY` is not set, the adapter is omitted (no error).
 - **note:** per-agent KV dictionary, not shared across agents
 
 ## Flow
@@ -81,5 +86,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 | G6 | Validation uses no web search | Validation agent instantiated with `{note}` only | ☐ |
 | G7 | Streaming thinking process | Validation intermediate thinking streamed in real-time | ☐ |
 | G8 | Session lifecycle | Research session terminates; validation session persists | ☐ |
-| G9 | Hexagonal architecture | LLM provider isolated behind interface; tools injected as adapters | ☐ |
-| G10 | Jina Search API integration | Search + parsing via Jina, abstracted behind `websearch` interface | ☐ |
+| G9 | Composition pattern | All adapters composed by config; missing API keys disable adapters without errors | ☐ |
+| G10 | Websearch optional | Falls back to internal knowledge when disabled, with `warn()` notification | ☐ |
+| G11 | Jira integration | Optional Jira adapter composed only if API key present | ☐ |
+| G12 | Jina Search API integration | Search + parsing via Jina, abstracted behind `websearch` interface | ☐ |

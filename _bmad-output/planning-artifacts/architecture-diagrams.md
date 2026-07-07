@@ -16,7 +16,7 @@ flowchart LR
     subgraph App["Application Layer"]
         Orchestrator["Orchestrator"]
         Session["Session Manager"]
-        TUIMgr["TUI Manager\nshowthinking()\noutput()\ninput()"]
+        TUIMgr["TUI Manager\nshowthinking()\noutput()\ninput()\nwarn()"]
     end
 
     subgraph AgentInstance["Per-Agent Instance (spawned × N)"]
@@ -31,8 +31,9 @@ flowchart LR
         Exec["OpenAI Execution Object"]
     end
 
-    subgraph Adapters["Adapters (Hexagonal)"]
-        WebSearch["Web Search Adapter\n(Jina API)"]
+    subgraph Adapters["Adapters (Hexagonal — composed by config)"]
+        WebSearch["Web Search Adapter\n(Jina API) — optional"]
+        JiraAdapter["Jira Adapter\n(Jira REST API) — optional"]
     end
 
     subgraph Storage["Shared In-Memory KV Cache"]
@@ -40,12 +41,14 @@ flowchart LR
     end
 
     TUI --> TUIMgr
-    TUIMgr -->|query| Orchestrator
+    TUIMgr -->|input()| Orchestrator
 
-    Orchestrator -->|spawn 3x, config=research| AgentInstance
-    Orchestrator -->|spawn 1x, config=validation| AgentInstance
+    Orchestrator -->|compose adapters\nby config| Adapters
+    Orchestrator -->|spawn 3x, tools=composed| AgentInstance
+    Orchestrator -->|spawn 1x, tools=composed| AgentInstance
 
-    CoT --> WebSearch
+    CoT -.->|if composed| WebSearch
+    CoT -.->|if composed| JiraAdapter
     CoT --> Config
     Config --> Exec
 
@@ -55,6 +58,7 @@ flowchart LR
     Session --> KVCache
 
     CoT -->|stream thinking/output| TUIMgr
+    Orchestrator -->|warn()| TUIMgr
     TUIMgr -->|render| TUI
 ```
 
@@ -68,9 +72,9 @@ sequenceDiagram
     participant TUI as CLI / TUI
     participant TUIMgr as TUI Manager
     participant Orch as Orchestrator
-    participant W1 as Research Agent 1<br/>(websearch+note)
-    participant W2 as Research Agent 2<br/>(websearch+note)
-    participant W3 as Research Agent 3<br/>(websearch+note)
+    participant W1 as Research Agent 1<br/>(composed tools + note)
+    participant W2 as Research Agent 2<br/>(composed tools + note)
+    participant W3 as Research Agent 3<br/>(composed tools + note)
     participant LLM as LLM Provider
     participant Val as Validation Agent<br/>(note only)
     participant KV as Session KV\n(In-Memory)
@@ -79,13 +83,19 @@ sequenceDiagram
     TUI->>TUIMgr: input("ask anything...")
     TUIMgr->>Orch: submit query
     Orch->>KV: init session
+
+    alt "no JINA_API_KEY"
+        Orch->>TUIMgr: warn("websearch disabled, falling back to internal knowledge")
+        TUIMgr->>TUI: render
+    end
+
     Orch->>TUIMgr: showthinking("researching...", {timeout: 0, showall: true})
     TUIMgr->>TUI: render
 
     par Concurrent Research
-        Orch->>W1: run(query, {websearch, note}, research-prompt)
-        Orch->>W2: run(query, {websearch, note}, research-prompt)
-        Orch->>W3: run(query, {websearch, note}, research-prompt)
+        Orch->>W1: run(query, {composed tools, note}, research-prompt)
+        Orch->>W2: run(query, {composed tools, note}, research-prompt)
+        Orch->>W3: run(query, {composed tools, note}, research-prompt)
     end
 
     loop Chain of Thought (per agent)
@@ -136,7 +146,8 @@ stateDiagram-v2
 flowchart TB
     subgraph Ports["Ports (Interfaces)"]
         IP_LM["LLMProviderPort"]
-        IP_Web["WebSearchPort"]
+        IP_Web["WebSearchPort\n(optional)"]
+        IP_Jira["JiraPort\n(optional)"]
         IP_Note["NoteToolPort"]
         IP_Session["SessionPort"]
     end
@@ -145,13 +156,15 @@ flowchart TB
         direction TB
         Wrapper["LLM Agent Wrapper\n(single primitive)"]
         Factory["Agent Factory\n(research config / validation config)"]
+        Orch["Orchestrator\n(composes adapters by config)"]
         LLMConfig["LLM Config\nbaseUrl, model, apiKey"]
     end
 
     subgraph AdaptersHex["Adapters"]
-        JinaAdapter["JinaSearchAdapter"]
-        NoteAdapter["NoteToolAdapter"]
-        SessionAdapter["SessionAdapter"]
+        JinaAdapter["JinaSearchAdapter\n(composed if JINA_API_KEY set)"]
+        JiraAdapter["JiraAdapter\n(composed if JIRA_API_KEY set)"]
+        NoteAdapter["NoteToolAdapter\n(always composed)"]
+        SessionAdapter["SessionAdapter\n(always composed)"]
     end
 
     subgraph LLM_Impl["LLM Provider (Implementation)"]
@@ -167,11 +180,14 @@ flowchart TB
 
     subgraph External["External"]
         JinaAPI["Jina Search API"]
+        JiraExt["Jira REST API"]
     end
 
+    Orch -->|compose| Factory
     Factory --> Wrapper
     Wrapper --> IP_LM
     Wrapper --> IP_Web
+    Wrapper --> IP_Jira
     Wrapper --> IP_Note
     Wrapper --> IP_Session
     LLMConfig --> Wrapper
@@ -180,7 +196,8 @@ flowchart TB
     LLM_IF --> Builder
     Builder --> SDK
 
-    IP_Web --> JinaAdapter
+    IP_Web -.->|if composed| JinaAdapter
+    IP_Jira -.->|if composed| JiraAdapter
     IP_Note --> NoteAdapter
     IP_Session --> SessionAdapter
 
@@ -188,9 +205,14 @@ flowchart TB
     SessionAdapter --> KVCache
 
     JinaAdapter --> JinaAPI
+    JiraAdapter --> JiraExt
 
     style Factory fill:#e1f5e1,stroke:#2e7d32
     style KVCache fill:#fce4ec,stroke:#c62828
+    style IP_Web stroke-dasharray: 5 5
+    style IP_Jira stroke-dasharray: 5 5
+    style JinaAdapter stroke-dasharray: 5 5
+    style JiraAdapter stroke-dasharray: 5 5
 ```
 
 ---
@@ -201,7 +223,7 @@ flowchart TB
 flowchart LR
     subgraph Factory["Agent Factory"]
         direction TB
-        A1["Research Agent<br/>systemPrompt: research<br/>tools: [websearch, note]<br/>instances: 3"]
+        A1["Research Agent<br/>systemPrompt: research<br/>tools: [websearch?, jira?, note]<br/>instances: 3"]
         A2["Validation Agent<br/>systemPrompt: validation<br/>tools: [note]<br/>instances: 1"]
     end
 
