@@ -15,38 +15,47 @@ flowchart LR
 
     subgraph App["Application Layer"]
         Orchestrator["Orchestrator"]
-        ValAgent["Validation Agent"]
         Session["Session Manager"]
+        TUIMgr["TUI Manager\nshowthinking()\noutput()\ninput()"]
     end
 
-    subgraph Core["Core Domain"]
-        LLMProvider["LLM Provider\n(Interface)"]
-        ResearchWorker1["Research Worker 1"]
-        ResearchWorker2["Research Worker 2"]
-        ResearchWorker3["Research Worker 3"]
+    subgraph AgentInstance["Per-Agent Instance (spawned × N)"]
+        direction TB
+        CoT["Chain-of-Thought Loop"]
+        Notebook["Own Notebook\n(per-agent KV scope)"]
+    end
+
+    subgraph LLM_Provider["LLM Provider"]
+        direction TB
+        Config["config: baseUrl, model, apiKey"]
+        Exec["OpenAI Execution Object"]
     end
 
     subgraph Adapters["Adapters (Hexagonal)"]
         WebSearch["Web Search Adapter\n(Jina API)"]
-        NoteTool["Note Tool Adapter\n(KV Dictionary)"]
-        Redis["Redis KV Store"]
     end
 
-    TUI -->|query| Orchestrator
-    Orchestrator -->|spawn 3x| ResearchWorker1
-    Orchestrator -->|spawn 3x| ResearchWorker2
-    Orchestrator -->|spawn 3x| ResearchWorker3
-    ResearchWorker1 --> LLMProvider
-    ResearchWorker2 --> LLMProvider
-    ResearchWorker3 --> LLMProvider
-    LLMProvider --> WebSearch
-    LLMProvider --> NoteTool
-    NoteTool --> Redis
-    Orchestrator -->|output| ValAgent
-    ValAgent -->|stream thinking| TUI
-    ValAgent -->|stream result| TUI
+    subgraph Storage["Shared In-Memory KV Cache"]
+        KVCache["{sessionKey: {<br/>  notebook_agent1: [...],<br/>  notebook_agent2: [...],<br/>  session: {...}<br/>}}"]
+    end
+
+    TUI --> TUIMgr
+    TUIMgr -->|query| Orchestrator
+
+    Orchestrator -->|spawn 3x, config=research| AgentInstance
+    Orchestrator -->|spawn 1x, config=validation| AgentInstance
+
+    CoT --> WebSearch
+    CoT --> Config
+    Config --> Exec
+
+    CoT -->|save/read| Notebook
+    Notebook --> KVCache
     Orchestrator --> Session
-    Session --> Redis
+    Session --> KVCache
+
+    CoT -->|stream thinking/output| TUIMgr
+    TUIMgr -->|render| TUI
 ```
 
 ---
@@ -57,40 +66,44 @@ flowchart LR
 sequenceDiagram
     actor User
     participant TUI as CLI / TUI
+    participant TUIMgr as TUI Manager
     participant Orch as Orchestrator
-    participant W1 as Worker 1
-    participant W2 as Worker 2
-    participant W3 as Worker 3
+    participant W1 as Research Agent 1<br/>(websearch+note)
+    participant W2 as Research Agent 2<br/>(websearch+note)
+    participant W3 as Research Agent 3<br/>(websearch+note)
     participant LLM as LLM Provider
-    participant Val as Validation Agent
-    participant Redis as Redis KV
+    participant Val as Validation Agent<br/>(note only)
+    participant KV as Session KV\n(In-Memory)
 
     User->>TUI: research query
-    TUI->>Orch: submit query
-    Orch->>Redis: init session
-    Orch->>TUI: start "researching..."
+    TUI->>TUIMgr: input("ask anything...")
+    TUIMgr->>Orch: submit query
+    Orch->>KV: init session
+    Orch->>TUIMgr: showthinking("researching...", {timeout: 0, showall: true})
+    TUIMgr->>TUI: render
 
     par Concurrent Research
-        Orch->>W1: run(query)
-        Orch->>W2: run(query)
-        Orch->>W3: run(query)
+        Orch->>W1: run(query, {websearch, note}, research-prompt)
+        Orch->>W2: run(query, {websearch, note}, research-prompt)
+        Orch->>W3: run(query, {websearch, note}, research-prompt)
     end
 
-    loop Chain of Thought
+    loop Chain of Thought (per agent)
         W1->>LLM: step()
         LLM-->>W1: response {type, content}
         alt type != "output"
-            W1->>Redis: save to notebook
+            W1->>KV: save to notebook
         else type == "output"
             W1-->>Orch: final result
         end
     end
 
-    Orch->>Val: validate(results)
-    Val->>TUI: stream thinking process
-    Val-->>TUI: stream validated output
-    Orch->>Redis: terminate research session
-    TUI->>User: display result
+    Orch->>Val: validate(results, {note}, validation-prompt)
+    Val->>TUIMgr: showthinking(intermediate, {timeout: null, showall: true})
+    TUIMgr->>TUI: render
+    Val-->>TUIMgr: output(validated result)
+    TUIMgr-->>TUI: render
+    Orch->>KV: terminate research session
 ```
 
 ---
@@ -111,8 +124,8 @@ stateDiagram-v2
     VAS --> VAS: validate turn 2
     VAS --> [*]: application exits
 
-    note right of RAS: Temporary thinking process cleared after each query
-    note right of VAS: Session persists across multiple user turns
+    note right of RAS: Cleared after each query
+    note right of VAS: Persists across multiple user turns
 ```
 
 ---
@@ -129,32 +142,75 @@ flowchart TB
     end
 
     subgraph CoreHex["Core Domain"]
-        LLMProviderImpl["LLMProvider\n(Implements Port)"]
+        direction TB
+        Wrapper["LLM Agent Wrapper\n(single primitive)"]
+        Factory["Agent Factory\n(research config / validation config)"]
+        LLMConfig["LLM Config\nbaseUrl, model, apiKey"]
     end
 
     subgraph AdaptersHex["Adapters"]
         JinaAdapter["JinaSearchAdapter"]
         NoteAdapter["NoteToolAdapter"]
-        RedisAdapter["RedisSessionAdapter"]
+        SessionAdapter["SessionAdapter"]
+    end
+
+    subgraph LLM_Impl["LLM Provider (Implementation)"]
+        direction TB
+        LLM_IF["Implements LLMProviderPort"]
+        Builder["Builds OpenAI Execution Object\n(baseUrl, model, apiKey)"]
+        SDK["OpenAI SDK"]
+    end
+
+    subgraph Storage["Shared In-Memory KV Cache"]
+        KVCache["Session-level Dictionary\n{key: {notebook, session}}"]
     end
 
     subgraph External["External"]
         JinaAPI["Jina Search API"]
-        RedisDB["Redis"]
-        OpenAI["OpenAI API"]
     end
 
-    LLMProviderImpl --> IP_LM
-    LLMProviderImpl --> IP_Web
-    LLMProviderImpl --> IP_Note
-    LLMProviderImpl --> IP_Session
+    Factory --> Wrapper
+    Wrapper --> IP_LM
+    Wrapper --> IP_Web
+    Wrapper --> IP_Note
+    Wrapper --> IP_Session
+    LLMConfig --> Wrapper
+
+    IP_LM --> LLM_IF
+    LLM_IF --> Builder
+    Builder --> SDK
 
     IP_Web --> JinaAdapter
     IP_Note --> NoteAdapter
-    IP_Session --> RedisAdapter
+    IP_Session --> SessionAdapter
+
+    NoteAdapter --> KVCache
+    SessionAdapter --> KVCache
 
     JinaAdapter --> JinaAPI
-    NoteAdapter --> RedisDB
-    RedisAdapter --> RedisDB
-    LLMProviderImpl --> OpenAI
+
+    style Factory fill:#e1f5e1,stroke:#2e7d32
+    style KVCache fill:#fce4ec,stroke:#c62828
+```
+
+---
+
+## 5. Agent Configuration Matrix
+
+```mermaid
+flowchart LR
+    subgraph Factory["Agent Factory"]
+        direction TB
+        A1["Research Agent<br/>systemPrompt: research<br/>tools: [websearch, note]<br/>instances: 3"]
+        A2["Validation Agent<br/>systemPrompt: validation<br/>tools: [note]<br/>instances: 1"]
+    end
+
+    subgraph PerInstance["Per Instance (spawned)"]
+        direction TB
+        CoT["own chain-of-thought loop"]
+        NB["own notebook\n(isolated KV scope)"]
+    end
+
+    A1 --> PerInstance
+    A2 --> PerInstance
 ```
