@@ -51,8 +51,9 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 
 ## Session Lifecycle
 
-- **Research Agent:** session created per query, chain-of-thought steps stored in notebook, session terminated after output delivered
-- **Validation Agent:** session persists across multiple user turns
+- **Orchestrator (Conversation Session):** persistent session storing `{user, assistant}` pairs across query turns. Passed as context to each new query iteration.
+- **Research Agents (temp sessions):** each of the 3 agents gets a temporary session for its notebook. Deleted by the orchestrator after the agent's output is collected.
+- **Validation Agent (temp session):** gets a temporary session for its notebook. Deleted by the orchestrator after the final answer is appended to the Conversation Session.
 
 ## Agent Tools
 

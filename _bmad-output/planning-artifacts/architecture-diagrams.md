@@ -37,15 +37,20 @@ flowchart LR
     end
 
     subgraph Storage["Shared In-Memory KV Cache"]
-        KVCache["{sessionKey: {<br/>  notebook_agent1: [...],<br/>  notebook_agent2: [...],<br/>  session: {...}<br/>}}"]
+        KVCache["convSession: {user, assistant}[]<br/>── per query ──<br/>agentSession_1: {notebook: [...]}<br/>agentSession_2: {notebook: [...]}<br/>agentSession_3: {notebook: [...]}<br/>valSession: {notebook: [...]}<br/>── all temp sessions deleted after completion ──"]
     end
 
     TUI --> TUIMgr
     TUIMgr -->|input()| Orchestrator
 
+    Orchestrator -->|owns| Session
+    Session -->|reads/writes| KVCache
+
     Orchestrator -->|compose adapters\nby config| Adapters
-    Orchestrator -->|spawn 3x, tools=composed| AgentInstance
-    Orchestrator -->|spawn 1x, tools=composed| AgentInstance
+    Orchestrator -->|spawn 3x + temp sessions| AgentInstance
+    Orchestrator -->|spawn 1x + temp session| AgentInstance
+    Orchestrator -->|delete temp sessions after done| KVCache
+    Orchestrator -->|append output to convSession| KVCache
 
     CoT -.->|if composed| WebSearch
     CoT -.->|if composed| JiraAdapter
@@ -53,9 +58,7 @@ flowchart LR
     Config --> Exec
 
     CoT -->|save/read| Notebook
-    Notebook --> KVCache
-    Orchestrator --> Session
-    Session --> KVCache
+    Notebook -->|temp agent session| KVCache
 
     CoT -->|stream thinking/output| TUIMgr
     Orchestrator -->|warn()| TUIMgr
@@ -72,17 +75,20 @@ sequenceDiagram
     participant TUI as CLI / TUI
     participant TUIMgr as TUI Manager
     participant Orch as Orchestrator
-    participant W1 as Research Agent 1<br/>(composed tools + note)
-    participant W2 as Research Agent 2<br/>(composed tools + note)
-    participant W3 as Research Agent 3<br/>(composed tools + note)
+    participant Conv as Conversation Session<br/>{user, assistant}[]
+    participant W1 as Research Agent 1<br/>(composed tools + temp session)
+    participant W2 as Research Agent 2<br/>(composed tools + temp session)
+    participant W3 as Research Agent 3<br/>(composed tools + temp session)
     participant LLM as LLM Provider
-    participant Val as Validation Agent<br/>(note only)
-    participant KV as Session KV\n(In-Memory)
+    participant Val as Validation Agent<br/>(note + temp session)
+    participant KV as Agent Session KV\n(Temp — per agent)
 
     User->>TUI: research query
     TUI->>TUIMgr: input("ask anything...")
     TUIMgr->>Orch: submit query
-    Orch->>KV: init session
+    Orch->>Conv: append {user: query}
+    Orch->>KV: create temp sessions for research agents ×3
+    Orch->>KV: create temp session for validation agent ×1
 
     alt "no JINA_API_KEY"
         Orch->>TUIMgr: warn("websearch disabled, falling back to internal knowledge")
@@ -93,27 +99,30 @@ sequenceDiagram
     TUIMgr->>TUI: render
 
     par Concurrent Research
-        Orch->>W1: run(query, {composed tools, note}, research-prompt)
-        Orch->>W2: run(query, {composed tools, note}, research-prompt)
-        Orch->>W3: run(query, {composed tools, note}, research-prompt)
+        Orch->>W1: run(query, conv history, {composed tools, temp session}, research-prompt)
+        Orch->>W2: run(query, conv history, {composed tools, temp session}, research-prompt)
+        Orch->>W3: run(query, conv history, {composed tools, temp session}, research-prompt)
     end
 
     loop Chain of Thought (per agent)
         W1->>LLM: step()
         LLM-->>W1: response {type, content}
         alt type != "output"
-            W1->>KV: save to notebook
+            W1->>KV: save to temp notebook
         else type == "output"
             W1-->>Orch: final result
+            Orch->>KV: delete W1 temp session
         end
     end
 
-    Orch->>Val: validate(results, {note}, validation-prompt)
+    Orch->>Val: validate(results, conv history, {note, temp session}, validation-prompt)
     Val->>TUIMgr: showthinking(intermediate, {timeout: null, showall: true})
     TUIMgr->>TUI: render
     Val-->>TUIMgr: output(validated result)
     TUIMgr-->>TUI: render
-    Orch->>KV: terminate research session
+    Orch->>Conv: append {assistant: validated result}
+    Orch->>KV: delete all temp sessions
+    Orch->>TUIMgr: ready for next query
 ```
 
 ---
@@ -122,20 +131,24 @@ sequenceDiagram
 
 ```mermaid
 stateDiagram-v2
-    state "Research Agent Session" as RAS
-    state "Validation Agent Session" as VAS
+    state "Conversation Session (Orchestrator)" as CS
+    state "Query Cycle" as QC
+    state "Research Agent Temp Session ×3" as RAS
+    state "Validation Agent Temp Session" as VAS
 
-    [*] --> RAS: user query received
+    [*] --> CS: app starts
+    CS --> QC: user submits query
+    QC --> RAS: create 3 temp sessions, spawn agents
     RAS --> RAS: chain-of-thought step (type != output)
-    RAS --> VAS: output produced (type == output)
-    RAS --> [*]: session terminated
+    RAS --> QC: all agents output collected, temp sessions deleted
+    QC --> VAS: create validation temp session
+    VAS --> VAS: validate (majority-vote reasoning)
+    VAS --> CS: output appended as {assistant}, temp session deleted
+    CS --> QC: next query
 
-    VAS --> VAS: validate turn 1
-    VAS --> VAS: validate turn 2
-    VAS --> [*]: application exits
-
-    note right of RAS: Cleared after each query
-    note right of VAS: Persists across multiple user turns
+    note right of CS: Persists across turns<br/>{user, assistant}[]
+    note left of RAS: Deleted after output
+    note left of VAS: Deleted after append
 ```
 
 ---
@@ -175,7 +188,7 @@ flowchart TB
     end
 
     subgraph Storage["Shared In-Memory KV Cache"]
-        KVCache["Session-level Dictionary\n{key: {notebook, session}}"]
+        KVCache["convSession: {user, assistant}[]<br/>agentSession_N: {notebook: [...]} (temp)"]
     end
 
     subgraph External["External"]
