@@ -249,7 +249,6 @@ Success: I use this tool regularly for research queries and find synthesized ans
 
 1. How should the TUI handle very long chain-of-thought output? Truncation strategy?
 2. Should agent count be configurable (currently hardcoded to 3)?
-3. How should the TUI handle very long chain-of-thought output? Truncation strategy?
 
 ## 9. Assumptions Index
 
