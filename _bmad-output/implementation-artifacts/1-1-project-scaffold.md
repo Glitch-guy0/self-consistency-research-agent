@@ -1,6 +1,10 @@
+---
+baseline_commit: 7caa67ebf1c4187f0d669bb4e6283ba83a1bc056
+---
+
 # Story 1.1: Project Scaffold
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -20,24 +24,24 @@ So that I have a consistent foundation to build on.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Audit and verify existing scaffold state (AC: all)
-  - [ ] Confirm package.json is correct: ESM, deps, import aliases, scripts
-  - [ ] Confirm tsconfig.json is correct: strict, ESNext, bundler, rootDir
-  - [ ] Confirm .env.example has all 4 vars
-  - [ ] Confirm .gitignore covers dist/ (currently only node_modules)
-- [ ] Task 2: Create missing directories (AC: 3)
-  - [ ] `lib/providers/`
-  - [ ] `lib/tui/`
-  - [ ] `lib/agent/`
-  - [ ] `lib/session/`
-  - [ ] `lib/utils/`
-  - [ ] Add `.gitkeep` to empty dirs so they commit
-- [ ] Task 3: Create entry point — `main.ts` (AC: 6, 7)
-  - [ ] Should bootstrap config and orchestrator
-  - [ ] Must typecheck and compile cleanly
-- [ ] Task 4: Verify the build pipeline (AC: 6, 7)
-  - [ ] `npm run typecheck` → zero errors
-  - [ ] `npm run build` → dist/main.js produced
+- [x] Task 1: Audit and verify existing scaffold state (AC: all)
+  - [x] Confirm package.json is correct: ESM, deps, import aliases, scripts
+  - [x] Confirm tsconfig.json is correct: strict, ESNext, bundler, rootDir
+  - [x] Confirm .env.example has all 4 vars
+  - [x] Confirm .gitignore covers dist/ (currently only node_modules)
+- [x] Task 2: Create missing directories (AC: 3)
+  - [x] `lib/providers/`
+  - [x] `lib/tui/`
+  - [x] `lib/agent/`
+  - [x] `lib/session/`
+  - [x] `lib/utils/`
+  - [x] Add `.gitkeep` to empty dirs so they commit
+- [x] Task 3: Create entry point — `main.ts` (AC: 6, 7)
+  - [x] Should bootstrap config and orchestrator
+  - [x] Must typecheck and compile cleanly
+- [x] Task 4: Verify the build pipeline (AC: 6, 7)
+  - [x] `npm run typecheck` → zero errors
+  - [x] `npm run build` → dist/main.js produced
 
 ## Dev Notes
 
@@ -89,16 +93,31 @@ big-pickle (opencode/big-pickle)
 - Missing dirs identified: lib/providers/, lib/tui/, lib/agent/, lib/session/, lib/utils/
 - .gitignore needs `dist/` added
 - Stub files in lib/interface/ and util/ should NOT be implemented — later stories own them
+- Fixed main.ts — replaced broken OpenAI stub with minimal bootstrap (dotenv + async main)
+- Updated .gitignore to exclude dist/
+- Created 5 missing directories with .gitkeep files
+- Typecheck passes with zero errors
+- Build produces dist/main.js
+- Code review: 3 patches applied (untracked dist/, trailing newline in .gitignore, error handling in main.ts), 1 deferred (interface constructor), 8 dismissed
+
+## Review Findings
+
+### Patches (Actionable)
+
+- [x] [Review][Patch] `dist/` files still tracked in git index despite `.gitignore` — ran `git rm --cached -r dist/`. [.gitignore, dist/]
+- [x] [Review][Patch] No trailing newline in `.gitignore` — fixed. [.gitignore:2]
+- [x] [Review][Patch] `main.ts` has no error handling — added `.catch()` handler. [main.ts:9]
+
+### Deferred (Pre-existing)
+
+- [x] [Review][Defer] `constructor()` in `ILLMProvider` interface is invalid TypeScript — pre-existing stub owned by Story 1.6. [lib/interface/llmProvider.interface.ts:5]
 
 ### File List
 
-- package.json (verify/update if needed)
-- tsconfig.json (verify/update if needed)
-- .env.example (verify/update if needed)
-- .gitignore (update)
-- main.ts (fix stub)
-- lib/providers/ (create + .gitkeep)
-- lib/tui/ (create + .gitkeep)
-- lib/agent/ (create + .gitkeep)
-- lib/session/ (create + .gitkeep)
-- lib/utils/ (create + .gitkeep)
+- .gitignore — added `dist` entry
+- main.ts — rewritten with proper bootstrap
+- lib/providers/.gitkeep — created
+- lib/tui/.gitkeep — created
+- lib/agent/.gitkeep — created
+- lib/session/.gitkeep — created
+- lib/utils/.gitkeep — created

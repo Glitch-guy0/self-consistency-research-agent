@@ -35,7 +35,7 @@ story_location: /Users/prajwal/Documents/learning/self-consistency/_bmad-output/
 development_status:
   # Epic 1: Foundation & Core Infrastructure
   epic-1: in-progress
-  1-1-project-scaffold: ready-for-dev
+  1-1-project-scaffold: done
   1-2-environment-config-loader: backlog
   1-3-shared-in-memory-kvcache: backlog
   1-4-notetool-port-interface-and-notetool-adapter: backlog
