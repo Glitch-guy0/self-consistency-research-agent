@@ -48,6 +48,7 @@ A CLI tool that takes a user query, spawns 3 independent research agents running
 - **Conversation Session** — Persistent orchestrator-owned session storing `{user, assistant}` pairs across query turns.
 - **Agent Session** — Temporary session created per agent instance (research or validation), deleted after that agent completes.
 - **TUI Manager** — Terminal UI layer with `showthinking()`, `output()`, `input()`, `clear()`, and `warn()` methods.
+- **TerminalPresenter** — Optional styling component consumed by `TUIManager`. Provides `render()`, `success()`, `fail()`, `warning()` methods. Implementations: `ChalkPresenter` (Chark-based) or `PlainPresenter` (no-op styling). Swappable for any chalk-like library via the `ITerminalPresenter` interface.
 
 ## 4. Features
 
@@ -95,7 +96,7 @@ All 3 research outputs are passed to the validation agent (configured with `{not
 
 ### 4.2 TUI Layer
 
-**Description:** Terminal UI providing animated feedback during processing and streaming validation thinking. Uses Chalk for terminal styling. Realizes UJ-1.
+**Description:** Terminal UI providing animated feedback during processing and streaming validation thinking. Uses Chalk for terminal styling via an optional `ITerminalPresenter` interface. Realizes UJ-1.
 
 **Functional Requirements:**
 
@@ -122,6 +123,18 @@ When an optional adapter is unavailable (no API key), the TUI displays a warning
 **Consequences (testable):**
 - Missing JINA_API_KEY triggers "websearch disabled, falling back to internal knowledge".
 - Missing JIRA_API_KEY triggers no warning (silent skip).
+
+#### FR-7b: Optional terminal presenter with styled output
+
+`TUIManager` optionally composes an `ITerminalPresenter` at construction time. The presenter provides a `render()` method with fine-grained style control (`color`, `bgcolor`, `opacity`) and convenience wrappers `success()`, `fail()`, `warning()` that internally call `render()`. When Chalk is available, `ChalkPresenter` is used; otherwise `PlainPresenter` renders without styling.
+
+**Consequences (testable):**
+- `TUIManager` accepts an optional `ITerminalPresenter` in its constructor.
+- When `TerminalPresenter` is absent, all styled output renders as plain text.
+- `success()`, `fail()`, `warning()` each delegate to `render()` with preset style parameters.
+- `ChalkPresenter.render({color, bgcolor, opacity})` applies Chalk styling.
+- `PlainPresenter.render()` writes text directly to stdout without ANSI codes.
+- The presenter is swappable — any library implementing `ITerminalPresenter` can replace Chalk.
 
 ### 4.3 LLM Provider
 
@@ -232,6 +245,7 @@ The orchestrator owns one persistent Conversation Session storing `{user, assist
 - In-memory KV session management
 - Chalk-based terminal styling
 - Hexagonal architecture with composition pattern
+- Pluggable terminal presenter (Chalk or plain fallback via `ITerminalPresenter`)
 
 ### 6.2 Out of Scope for MVP
 

@@ -28,7 +28,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 | Web Search | Jina Search API (optional — composed only if API key present) |
 | Jira | Jira REST API (optional — composed only if API key present) |
 | Session Store | In-memory KV (session dictionary) |
-| TUI | Chalk + terminal |
+| TUI | Chalk + terminal (via `ITerminalPresenter` interface — swappable) |
 
 ## Key Components
 
@@ -39,6 +39,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 - **LLM Provider** — wraps OpenAI SDK; builds an execution object at runtime with configurable `baseUrl`, `model`, `apiKey`. These configs are exposed at the top layer (orchestrator / agent factory).
 - **Web Search Adapter** — wraps Jina Search API (search + content parsing). Optional — composed only if JINA_API_KEY is present. Falls back to agent internal knowledge when disabled, with a warning notification.
 - **Jira Adapter** — wraps Jira REST API for querying project data. Optional — composed only if JIRA_API_KEY is present. If missing, the adapter is excluded from composition (no error).
+- **TerminalPresenter** — Optional styling component consumed by `TUIManager`. Interface `ITerminalPresenter` exposes `render({color?, bgcolor?, opacity?})` for fine-grained control plus `success()`, `fail()`, `warning()` wrappers. Two implementations: `ChalkPresenter` (uses Chalk when available) and `PlainPresenter` (no styling, direct terminal write). Swappable for any chalk-like library.
 - **Note Tool Adapter** — per-agent KV dictionary scoped to that agent instance; each agent's notebook is isolated within the shared in-memory KV cache
 - **Session Manager** — in-memory KV dictionary for session lifecycle; backed by the same shared in-memory KV cache as the note tool (implements SessionPort; swappable for Redis later)
 - **TUI Manager** — terminal UI layer with:
@@ -48,6 +49,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
   - `output(string)` — displays final agent output
   - `input(placeholder)` — prompts user for input with a placeholder string
   - `warn(message)` — displays a warning notification (e.g., "websearch disabled, falling back to internal knowledge")
+  - Optionally composes `ITerminalPresenter` for styled output; uses `ChalkPresenter` when Chalk is available, `PlainPresenter` when absent
 
 ## Session Lifecycle
 
@@ -91,3 +93,4 @@ All adapters follow the composition pattern:
 | G10 | Websearch optional | Falls back to internal knowledge when disabled, with `warn()` notification | ☐ |
 | G11 | Jira integration | Optional Jira adapter composed only if API key present | ☐ |
 | G12 | Jina Search API integration | Search + parsing via Jina, abstracted behind `websearch` interface | ☐ |
+| G13 | Pluggable terminal styling | `TUIManager` optionally composes `ITerminalPresenter`; `ChalkPresenter` when chalk available, `PlainPresenter` fallback; swappable interface | ☐ |

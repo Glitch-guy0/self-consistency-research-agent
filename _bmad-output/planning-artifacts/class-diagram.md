@@ -1,6 +1,8 @@
 # Class Diagram: Self-Consistency Research Agent
 
-## Mermaid Class Diagram
+## 1. Ports & Adapters — Hexagonal Boundary
+
+Interfaces (ports) on the left, their concrete implementations (adapters) on the right. Optional adapters use dashed lines — they are composed only when the corresponding API key is present.
 
 ```mermaid
 classDiagram
@@ -63,13 +65,6 @@ classDiagram
         +outputFormat(schema: ZodType) ILLMProvider
     }
 
-    class LLMConfig {
-        +baseUrl: string
-        +model: string
-        +apiKey: string
-        +maxRetries: number
-    }
-
     class JinaSearchAdapter {
         -apiKey: string
         +search(query: string) string
@@ -107,6 +102,32 @@ classDiagram
         +useroutput() void
     }
 
+    ILLMProvider <|.. LLMProvider : implements
+    ITUIManager <|.. TUIManager : implements
+    IWebSearchPort <|.. JinaSearchAdapter : implements
+    IJiraPort <|.. JiraAdapter : implements
+    INoteToolPort <|.. NoteToolAdapter : implements
+    ISessionPort <|.. SessionAdapter : implements
+
+    LLMAgentWrapper <|.. IConsistencyProtocol : implements
+
+    style ILLMProvider fill:#e3f2fd,stroke:#1565c0
+    style ITUIManager fill:#e3f2fd,stroke:#1565c0
+    style IWebSearchPort fill:#e3f2fd,stroke:#1565c0
+    style IJiraPort fill:#e3f2fd,stroke:#1565c0
+    style INoteToolPort fill:#e3f2fd,stroke:#1565c0
+    style ISessionPort fill:#e3f2fd,stroke:#1565c0
+    style IConsistencyProtocol fill:#e3f2fd,stroke:#1565c0
+```
+
+---
+
+## 2. Orchestrator & Factory — Lifecycle Management
+
+The orchestrator coordinates the entire pipeline. It uses the TUI, owns the session, and delegates agent creation to the factory. The factory reads agent config and produces LLMAgentWrapper instances.
+
+```mermaid
+classDiagram
     class Orchestrator {
         -tui: ITUIManager
         -sessionAdapter: ISessionPort
@@ -124,6 +145,39 @@ classDiagram
         +createValidationAgent(config: AgentConfig) LLMAgentWrapper
     }
 
+    class AgentConfig {
+        +tools: string[]
+        +systemPrompt: string
+        +llmConfig: LLMConfig
+        +sessionId: string
+    }
+
+    class LLMConfig {
+        +baseUrl: string
+        +model: string
+        +apiKey: string
+        +maxRetries: number
+    }
+
+    Orchestrator --> ITUIManager : uses
+    Orchestrator --> ISessionPort : owns
+    Orchestrator --> AgentFactory : configures
+
+    AgentFactory --> AgentConfig : reads
+    AgentFactory --> LLMAgentWrapper : creates
+
+    style Orchestrator fill:#e8f5e9,stroke:#2e7d32
+    style AgentFactory fill:#e8f5e9,stroke:#2e7d32
+```
+
+---
+
+## 3. Agent Internals — Tool Composition
+
+Every agent is the same `LLMAgentWrapper` primitive. What differs is its `ToolSet` — composed at factory time from configured adapters. Research agents get `websearch + jira + note`; validation agents get `note` only. The LLM provider is the single external dependency all agents share.
+
+```mermaid
+classDiagram
     class LLMAgentWrapper {
         -tools: ToolSet
         -systemPrompt: string
@@ -135,19 +189,44 @@ classDiagram
         -step() string
     }
 
-    class AgentConfig {
-        +tools: string[]
-        +systemPrompt: string
-        +llmConfig: LLMConfig
-        +sessionId: string
-    }
-
     class ToolSet {
         +websearch: IWebSearchPort
         +jira: IJiraPort
         +note: INoteToolPort
     }
 
+    class LLMProvider~U, V~ {
+        -client: OpenAI
+        -config: LLMConfig
+        +stream() Promise~ReadableStream~
+        +message() Promise~string~
+        +json() Promise~U~
+        +outputFormat(schema: ZodType) ILLMProvider
+    }
+
+    LLMAgentWrapper --> ToolSet : composes
+    LLMAgentWrapper --> ILLMProvider : uses
+    LLMAgentWrapper --> INoteToolPort : writes
+    LLMAgentWrapper --> ISessionPort : manages
+    LLMAgentWrapper --> AgentOutput : produces
+
+    ToolSet --> IWebSearchPort : optional
+    ToolSet --> IJiraPort : optional
+    ToolSet --> INoteToolPort : required
+
+    LLMProvider --> LLMConfig : reads
+
+    style LLMAgentWrapper fill:#e8f5e9,stroke:#2e7d32
+```
+
+---
+
+## 4. Storage & Data Models
+
+A single in-memory `KVCache` backs both the session manager and per-agent notebooks. The orchestrator owns one `ConvSessionData` (persistent `{user, assistant}` pairs), while each agent gets a temp `SessionData` (isolated notebook). All temp sessions are deleted after query completion.
+
+```mermaid
+classDiagram
     class KVCache {
         -store: string
         +get(key: string) any
@@ -177,53 +256,18 @@ classDiagram
         +result: string
     }
 
-    ILLMProvider <|.. LLMProvider : implements
-    ITUIManager <|.. TUIManager : implements
-    IWebSearchPort <|.. JinaSearchAdapter : implements
-    IJiraPort <|.. JiraAdapter : implements
-    INoteToolPort <|.. NoteToolAdapter : implements
-    ISessionPort <|.. SessionAdapter : implements
-
-    Orchestrator --> ITUIManager : uses
-    Orchestrator --> ISessionPort : owns
-    Orchestrator --> AgentFactory : configures
-
-    AgentFactory --> LLMAgentWrapper : creates
-    AgentFactory --> AgentConfig : reads
-
-    LLMAgentWrapper --> ILLMProvider : uses
-    LLMAgentWrapper --> ToolSet : composes
-    LLMAgentWrapper --> INoteToolPort : writes
-    LLMAgentWrapper --> ISessionPort : manages
-    LLMAgentWrapper --> AgentOutput : produces
-
-    ToolSet --> IWebSearchPort : optional
-    ToolSet --> IJiraPort : optional
-    ToolSet --> INoteToolPort : required
-
-    LLMProvider --> LLMConfig : reads
     NoteToolAdapter --> KVCache : backs
     SessionAdapter --> KVCache : backs
 
     ISessionPort --> SessionData : agent scope
     ISessionPort --> ConvSessionData : conv scope
 
-    LLMAgentWrapper <|.. IConsistencyProtocol : implements
-
-    style ILLMProvider fill:#e3f2fd,stroke:#1565c0
-    style ITUIManager fill:#e3f2fd,stroke:#1565c0
-    style IWebSearchPort fill:#e3f2fd,stroke:#1565c0
-    style IJiraPort fill:#e3f2fd,stroke:#1565c0
-    style INoteToolPort fill:#e3f2fd,stroke:#1565c0
-    style ISessionPort fill:#e3f2fd,stroke:#1565c0
-    style IConsistencyProtocol fill:#e3f2fd,stroke:#1565c0
     style KVCache fill:#fce4ec,stroke:#c62828
-    style Orchestrator fill:#e8f5e9,stroke:#2e7d32
-    style AgentFactory fill:#e8f5e9,stroke:#2e7d32
-    style LLMAgentWrapper fill:#e8f5e9,stroke:#2e7d32
 ```
 
-## Ports (Interfaces)
+---
+
+## Ports (Interfaces) — Quick Reference
 
 | Interface | Methods | Purpose |
 |-----------|---------|---------|
@@ -242,3 +286,58 @@ classDiagram
 - **LLMAgentWrapper** is the single reusable primitive — takes a `ToolSet` + `systemPrompt` and runs CoT
 - **ToolSet** is composed at factory time based on environment config (optional adapters excluded when keys missing)
 - **KVCache** is the shared in-memory store backing both `NoteToolAdapter` and `SessionAdapter`
+
+---
+
+## 5. TerminalPresenter — Optional Styling
+
+`TUIManager` optionally composes an `ITerminalPresenter`. Chalk is the primary implementation; when unavailable, `PlainPresenter` writes text directly without ANSI codes. The interface is swappable for any chalk-like library.
+
+```mermaid
+classDiagram
+    class ITerminalPresenter {
+        <<Interface>>
+        +render(opts: {color?: string; bgcolor?: string; opacity?: number}) void
+        +success(text: string) void
+        +fail(text: string) void
+        +warning(text: string) void
+    }
+
+    class ChalkPresenter {
+        -chalk: Chalk
+        +render(opts: {color?: string; bgcolor?: string; opacity?: number}) void
+        +success(text: string) void
+        +fail(text: string) void
+        +warning(text: string) void
+    }
+
+    class PlainPresenter {
+        +render(opts: {color?: string; bgcolor?: string; opacity?: number}) void
+        +success(text: string) void
+        +fail(text: string) void
+        +warning(text: string) void
+    }
+
+    class TUIManager {
+        -chalk: string
+        -currentThinking: string
+        -presenter: ITerminalPresenter
+        +showthinking(text: string, opts: string) void
+        +clear() void
+        +truncateLength() number
+        +output(text: string) void
+        +input(placeholder: string) string
+        +useroutput() void
+    }
+
+    ITerminalPresenter <|.. ChalkPresenter : chalk implementation
+    ITerminalPresenter <|.. PlainPresenter : fallback (no styling)
+    TUIManager --> ITerminalPresenter : optional composition
+
+    style ITerminalPresenter fill:#e3f2fd,stroke:#1565c0
+    note for TUIManager "presenter is optional"
+```
+
+Append to Ports table:
+
+| `ITerminalPresenter` | `render()`, `success()`, `fail()`, `warning()` | Optional terminal styling; swappable for any chalk-like library |

@@ -1,6 +1,8 @@
 # Object Diagram: Runtime Snapshot During Query Execution
 
-## Mermaid Object Diagram
+## 1. Runtime Instance Snapshot
+
+An object (`instanceName:ClassName`) diagram showing a live state when the user submits a query. Three research agents are in-flight, the validation agent hasn't been spawned yet, and the single `KVCache` holds both the conversation session and three temp agent notebooks.
 
 ```mermaid
 classDiagram
@@ -89,6 +91,35 @@ classDiagram
     nAdapter --> cache
 ```
 
+---
+
+## 2. Session State Transitions
+
+A state diagram showing how the `ConvSessionData` and `TempSessionData` objects evolve across a full two-query lifecycle. Temp sessions are created per query and garbage-collected after the agent produces its `AgentOutput`.
+
+```mermaid
+stateDiagram-v2
+    state "App Start" as START
+    state "ConvSessionData" as CONV {
+        [*] --> empty
+        empty --> q1Phase1 : Query 1
+        q1Phase1 --> q1Phase2 : Agent Output Collected
+        q1Phase2 --> q2Phase1 : Query 2
+        q2Phase1 --> q2Phase2 : Agent Output Collected
+    }
+
+    state "TempSessionData (per query)" as TEMP {
+        [*] --> created : spawnResearchAgents
+        created --> inFlight : run CoT
+        inFlight --> collected : AgentOutput produced
+        collected --> [*] : deleted
+    }
+
+    START --> empty : init Conversation Session
+```
+
+---
+
 ## Object Table
 
 | Object | Class | State | Notes |
@@ -104,7 +135,28 @@ classDiagram
 | `cache` | `KVCache` | 3 temp sessions + 1 conv session | Shared in-memory store |
 | `jina` | `JinaSearchAdapter` | composed (API key present) | Optional adapter |
 
-## Session State Transitions
+## 3. TerminalPresenter — Runtime Styling State
+
+When Chalk is available, `tui` composes `ChalkPresenter` for styled output. When absent, `PlainPresenter` is used. The object below shows the Chalk-composed state.
+
+```mermaid
+classDiagram
+    class tui:TUIManager {
+        chalk = Chalk
+        currentThinking = researching...
+        presenter = pres
+    }
+
+    class pres:ChalkPresenter {
+        chalk = chalk instance
+    }
+
+    tui --> pres : optional composition
+```
+
+---
+
+## Session State Transitions (ASCII View)
 
 ```
 App Start           Query 1             Query 1             Query 2
@@ -122,6 +174,6 @@ App Start           Query 1             Query 1             Query 2
                          ▼                                 └──────────────┘
                    All temp sessions                            │
                    deleted after output                         ▼
-                                                          Deleted after
-                                                          output (new cycle)
+                                                           Deleted after
+                                                           output (new cycle)
 ```

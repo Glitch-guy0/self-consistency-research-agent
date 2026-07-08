@@ -249,3 +249,54 @@ flowchart LR
     A1 --> PerInstance
     A2 --> PerInstance
 ```
+
+---
+
+## 6. TerminalPresenter — Optional Styling Component
+
+`TUIManager` optionally composes an `ITerminalPresenter` at construction. When Chalk is available, `ChalkPresenter` provides colored output; when absent, `PlainPresenter` writes directly to terminal without styling. The interface is swappable for any chalk-like library.
+
+```mermaid
+classDiagram
+    class ITerminalPresenter {
+        <<Interface>>
+        +render(opts: {color?: string; bgcolor?: string; opacity?: number}) void
+        +success(text: string) void
+        +fail(text: string) void
+        +warning(text: string) void
+    }
+
+    class ChalkPresenter {
+        -chalk: Chalk
+        +render(opts: {color?: string; bgcolor?: string; opacity?: number}) void
+        +success(text: string) void
+        +fail(text: string) void
+        +warning(text: string) void
+    }
+
+    class PlainPresenter {
+        +render(opts: {color?: string; bgcolor?: string; opacity?: number}) void
+        +success(text: string) void
+        +fail(text: string) void
+        +warning(text: string) void
+    }
+
+    class TUIManager {
+        -chalk: string
+        -currentThinking: string
+        -presenter: ITerminalPresenter
+        +showthinking(text: string, opts: string) void
+        +clear() void
+        +truncateLength() number
+        +output(text: string) void
+        +input(placeholder: string) string
+        +useroutput() void
+    }
+
+    ITerminalPresenter <|.. ChalkPresenter : chalk implementation
+    ITerminalPresenter <|.. PlainPresenter : fallback (no styling)
+    TUIManager --> ITerminalPresenter : optional composition
+
+    style ITerminalPresenter fill:#e3f2fd,stroke:#1565c0
+    note for TUIManager "presenter is optional — TUIManager\ngracefully degrades when absent"
+```
