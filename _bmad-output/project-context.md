@@ -59,5 +59,22 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **Always code to interfaces** — every public capability must be defined in `lib/interface/*.interface.ts` before implementation. Classes implement interfaces, not the other way around.
 - **Plan for scale** — design abstractions that support multiple strategies (e.g., multiple LLM providers, evaluation methods, TUI renderers). Use generics and dependency injection rather than hard-coding implementations.
 
+### Folder Structure Conventions
+
+```
+lib/
+  interface/      # All interfaces (*.interface.ts)
+  types/          # Shared type definitions & type aliases
+  utils/          # Utility/helper functions (*.util.ts)
+util/               # Root-level utilities (alias: #util/*)
+```
+
+- **Interfaces** always go in `lib/interface/` — suffix with `.interface.ts`
+- **Utilities** go in either `lib/utils/` (library-scoped) or `util/` (root-level, shared), suffixed with `.util.ts`
+- **Types** (type aliases, enums, constants) go in `lib/types/`
+- **Import via aliases** — use `#lib/interface/foo.interface.ts`, `#lib/utils/bar.util.ts`, `#util/baz.util.ts`
+- **No barrel files** — always import from the specific module path
+- **Keep depth shallow** — prefer flat subdirectories over deep nesting for discoverability
+
 ## Critical Implementation Rules
 

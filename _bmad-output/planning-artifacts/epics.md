@@ -3,6 +3,8 @@ stepsCompleted:
   - step-01-prerequisites-validated
   - step-01-requirements-extracted
   - step-01-user-confirmed
+  - step-02-epics-designed
+  - step-02-epics-approved
 inputDocuments:
   - prds/prd-self-consistency-2026-07-07/prd.md
   - architecture-diagrams.md
@@ -69,33 +71,37 @@ None — CLI tool with no UI/UX design specification.
 
 ### FR Coverage Map
 
-{{requirements_coverage_map}}
+| FR | Epic | Description |
+|----|------|-------------|
+| FR-1 | Epic 4 | Query intake and conversation session |
+| FR-2 | Epic 4 | Concurrent research agent dispatch |
+| FR-3 | Epic 4 | Chain-of-thought loop with response type resolution |
+| FR-4 | Epic 4 | Validation agent with confidence scoring |
+| FR-5 | Epic 3 | Animated "researching" indicator |
+| FR-6 | Epic 3 | Streaming validation thinking |
+| FR-7 | Epic 3 | Warning notifications for missing adapters |
+| FR-8 | Epic 3 | Optional terminal presenter with styled output |
+| FR-9 | Epic 2 | Configurable LLM execution object |
+| FR-10 | Epic 2 | Multiple output modes (stream, message, json) |
+| FR-11 | Epic 2 | Jina search and parse |
+| FR-12 | Epic 2 | Graceful degradation when web search disabled |
+| FR-13 | Epic 1 | In-memory KV store |
+| FR-14 | Epic 1 | Session lifecycle management |
 
 ## Epic List
 
-{{epics_list}}
+### Epic 1: Foundation & Core Infrastructure
+Set up the project skeleton, all hexagonal port interfaces, in-memory KV storage, session management, note tool adapter, and environment configuration via .env.
+**FRs covered:** FR-13, FR-14
 
-<!-- Repeat for each epic in epics_list (N = 1, 2, 3...) -->
+### Epic 2: LLM Provider & Web Search
+Implement the LLM provider with configurable execution object and multiple output modes, and the optional Jina web search provider with graceful degradation when API key is missing.
+**FRs covered:** FR-9, FR-10, FR-11, FR-12
 
-## Epic {{N}}: {{epic_title_N}}
+### Epic 3: Terminal UI & Presentation
+Build the TUI manager with animated researching indicator, streaming validation thinking, warning notifications, and the optional terminal presenter with ChalkPresenter and PlainPresenter implementations.
+**FRs covered:** FR-5, FR-6, FR-7, FR-8
 
-{{epic_goal_N}}
-
-<!-- Repeat for each story (M = 1, 2, 3...) within epic N -->
-
-### Story {{N}}.{{M}}: {{story_title_N_M}}
-
-As a {{user_type}},
-I want {{capability}},
-So that {{value_benefit}}.
-
-**Acceptance Criteria:**
-
-<!-- for each AC on this story -->
-
-**Given** {{precondition}}
-**When** {{action}}
-**Then** {{expected_outcome}}
-**And** {{additional_criteria}}
-
-<!-- End story repeat -->
+### Epic 4: Agent Pipeline & Orchestration
+Implement the orchestrator, agent factory with two-phase lifecycle (registerResearchAgent + spawnAll), LLM agent wrapper with chain-of-thought loop, concurrent research agent dispatch, and validation agent with confidence scoring.
+**FRs covered:** FR-1, FR-2, FR-3, FR-4
