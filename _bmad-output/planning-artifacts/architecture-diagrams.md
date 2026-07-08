@@ -95,7 +95,7 @@ sequenceDiagram
     Orch->>KV: create temp sessions for N research agents
     Orch->>KV: create temp session for validation agent
 
-    Orch->>TUIMgr: showthinking("researching...", {timeout: 0, showall: true})
+    Orch->>TUIMgr: showthinking("researching...", {delay: 0, showall: true})
     TUIMgr->>TUI: render
 
     par Concurrent Research
@@ -115,7 +115,7 @@ sequenceDiagram
     end
 
     Orch->>Val: validate(results, conv history, {note, temp session}, validation-prompt)
-    Val->>TUIMgr: showthinking(intermediate, {timeout: null, showall: true})
+    Val->>TUIMgr: showthinking(intermediate, {delay: null, showall: true})
     TUIMgr->>TUI: render
     alt results agree
         Val-->>TUIMgr: output(synthesized answer)

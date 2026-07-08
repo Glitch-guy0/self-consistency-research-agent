@@ -41,7 +41,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 - **Note Tool Adapter** — per-agent KV dictionary scoped to that agent instance; each agent's notebook is isolated within the shared in-memory KV cache
 - **Session Manager** — in-memory KV dictionary for session lifecycle; backed by the same shared in-memory KV cache as the note tool (implements SessionPort; swappable for Redis later)
 - **TUI Manager** — terminal UI layer with:
-  - `showthinking(text, {timeout?, showall?})` — displays thinking/intermediate text; `timeout` auto-clears after a duration, `showall` bypasses truncation
+  - `showthinking(text, {delay?, showall?})` — displays thinking/intermediate text; `delay` auto-clears after a duration, `showall` bypasses truncation
   - `clear()` — *(private)* clears the current thinking text
   - `_truncateLength()` — *(private)* calculates truncation boundary based on terminal dimensions
   - `output(string)` — displays final agent output
@@ -65,11 +65,11 @@ All adapters follow the composition pattern:
 
 1. TUI Manager calls `input("ask anything...")`, user submits query
 2. Session initialized in in-memory KV store
-3. TUI Manager calls `showthinking("researching...", {timeout: 0, showall: true})` — animated dots render in terminal
+3. TUI Manager calls `showthinking("researching...", {delay: 0, showall: true})` — animated dots render in terminal
 4. N research agents dispatched concurrently (per factory roster), each with their own LLM provider + `{websearch, note}` tools + research system prompt
 5. Each runs chain-of-thought, checking response type — `output` means complete, otherwise save to notebook and continue
 6. All outputs collected and sent to validation agent (single instance, `{note}` tool only, validation system prompt) which uses confidence scoring and shows divergent results when answers disagree
-7. Validation agent's intermediate thinking streamed via `showthinking(text, {timeout: null, showall: true})`
+7. Validation agent's intermediate thinking streamed via `showthinking(text, {delay: null, showall: true})`
 8. Final result delivered via `output(string)`
 
 ---

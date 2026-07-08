@@ -112,7 +112,7 @@ While research agents run, the TUI displays "researching..." with animated dots 
 
 #### FR-6: Streaming validation thinking
 
-Validation agent's intermediate chain-of-thought streams to the TUI in real-time via `showthinking(text, {timeout: null, showall: true})`.
+Validation agent's intermediate chain-of-thought streams to the TUI in real-time via `showthinking(text, {delay: null, showall: true})`.
 
 **Consequences (testable):**
 - Text appears incrementally as the validation agent produces it.

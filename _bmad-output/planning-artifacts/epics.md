@@ -33,7 +33,7 @@ FR-2: Concurrent research agent dispatch — orchestrator spawns LLM Agent Wrapp
 FR-3: Chain-of-thought loop with response type resolution — each agent runs a CoT loop checking response type field, terminates when type === "output", saves intermediate content to temp notebook
 FR-4: Validation agent with confidence scoring — all research outputs passed to validation agent which uses agreement-strength scoring; when converged → synthesized answer, when diverged → confidence scores + differing results shown
 FR-5: Animated "researching" indicator — TUI displays "researching..." with animated dots during research agent execution, auto-clears on completion
-FR-6: Streaming validation thinking — validation agent's intermediate chain-of-thought streams to TUI in real-time via showthinking(text, {timeout: null, showall: true})
+FR-6: Streaming validation thinking — validation agent's intermediate chain-of-thought streams to TUI in real-time via showthinking(text, {delay: null, showall: true})
 FR-7: Warning notifications — when optional adapter unavailable, TUI displays warning via warn() before agent dispatch
 FR-8: Optional terminal presenter with styled output — TUIManager optionally composes ITerminalPresenter; ChalkPresenter when Chalk available, PlainPresenter fallback; success(), fail(), warning() wrappers
 FR-9: Configurable execution object — LLM provider builds OpenAI execution object from configurable parameters (baseUrl, model, apiKey)
@@ -274,7 +274,7 @@ So that I know the system is processing my query.
 **Acceptance Criteria:**
 
 **Given** research agents are dispatched
-**When** `showthinking("researching...", {timeout: 0, showall: true})` is called
+**When** `showthinking("researching...", {delay: 0, showall: true})` is called
 **Then** animated dots cycle (e.g., ".", "..", "...") while agents run
 **And** the animation stops and clears when all research agents complete
 
@@ -287,7 +287,7 @@ So that I can understand its reasoning process.
 **Acceptance Criteria:**
 
 **Given** the validation agent is running
-**When** `showthinking(text, {timeout: null, showall: true})` is called
+**When** `showthinking(text, {delay: null, showall: true})` is called
 **Then** text appears incrementally as the agent produces it
 **And** the display does not auto-clear after each chunk
 **And** the full thinking is visible to the user
