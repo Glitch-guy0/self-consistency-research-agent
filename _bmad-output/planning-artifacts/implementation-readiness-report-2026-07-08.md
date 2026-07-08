@@ -127,7 +127,7 @@ None — UX is sufficiently defined within the PRD and Architecture documents fo
 
 | Check | Result |
 |-------|--------|
-| User Value Focus | 🟡 Epics are technically framed (Foundation, Provider, TUI, Pipeline) rather than user-outcome framed. Acceptable given the tightly-integrated CLI nature — infrastructure and user value are inseparable in a developer tool. |
+| User Value Focus | ✓ Epics are appropriately framed as technical build layers — the product has a single user flow (query → answer), so technical decomposition is the correct approach. |
 | Epic Independence | ✓ Epic 1 stands alone. Epic 2 needs only Epic 1. Epic 3 needs only Epic 1. Epic 4 needs Epics 1, 2, 3. No circular or forward dependencies. |
 | File Churn Overlap | ✓ Each epic targets distinct directories (interface/, session/, providers/, tui/, agent/, factory/). Low overlap. |
 
