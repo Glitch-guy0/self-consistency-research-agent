@@ -2,7 +2,7 @@
 
 ## 1. Runtime Instance Snapshot
 
-An object (`instanceName:ClassName`) diagram showing a live state when the user submits a query. Three research agents are in-flight, the validation agent hasn't been spawned yet, and the single `KVCache` holds both the conversation session and three temp agent notebooks.
+An object (`instanceName:ClassName`) diagram showing a live state when the user submits a query. N research agents are in-flight (3 shown as example), each with their own LLM provider, the validation agent hasn't been spawned yet, and the single `KVCache` holds both the conversation session and N temp agent notebooks.
 
 ```mermaid
 classDiagram
@@ -27,7 +27,7 @@ classDiagram
     }
 
     class f:AgentFactory {
-        llmConfig = configured
+        roster = [rConfig1, rConfig2, rConfig3]
     }
 
     class r1:LLMAgentWrapper {
@@ -54,13 +54,20 @@ classDiagram
         systemPrompt = athena
     }
 
-    class p1:LLMProvider {
-        client = OpenAI
-        config = default
+    class prov1:LLMProvider {
+        config = {baseUrl: A, model: gpt-4o, apiKey: key1}
+    }
+
+    class prov2:LLMProvider {
+        config = {baseUrl: B, model: claude-4, apiKey: key2}
+    }
+
+    class prov3:LLMProvider {
+        config = {baseUrl: C, model: gemini-3, apiKey: key3}
     }
 
     class cache:KVCache {
-        store = conv plus 4 temp
+        store = conv plus N temp
     }
 
     class jina:JinaSearchProvider {
@@ -70,14 +77,14 @@ classDiagram
     orch --> tui
     orch --> sAdapter
     orch --> f
-    f --> r1 : creates
-    f --> r2 : creates
-    f --> r3 : creates
+    f --> r1 : spawnAll creates
+    f --> r2 : spawnAll creates
+    f --> r3 : spawnAll creates
     f --> v1 : created later
 
-    r1 --> p1
-    r2 --> p1
-    r3 --> p1
+    r1 --> prov1
+    r2 --> prov2
+    r3 --> prov3
 
     r1 --> nAdapter
     r2 --> nAdapter
@@ -128,11 +135,11 @@ stateDiagram-v2
 | `tui` | `TUIManager` | showing "researching..." | Chalk-based terminal |
 | `sAdapter` | `SessionAdapter` | backed by `cache` | Manages all sessions |
 | `nAdapter` | `NoteToolAdapter` | backed by `cache` | Per-agent notebook store |
-| `f` | `AgentFactory` | configured with LLM config | Creates agent instances |
-| `r1, r2, r3` | `LLMAgentWrapper` | each with own `sessionId` | Research agents in-flight |
+| `f` | `AgentFactory` | `roster = [rConfig1, rConfig2, rConfig3]` | Manages agent roster via register/spawnAll |
+| `r1, r2, r3` | `LLMAgentWrapper` | each with own `sessionId` | Research agents in-flight, each with own provider |
 | `v1` | `LLMAgentWrapper` | not yet created | Validation agent (pending) |
-| `p1` | `LLMProvider` | wraps OpenAI SDK | Shared by all agents |
-| `cache` | `KVCache` | 3 temp sessions + 1 conv session | Shared in-memory store |
+| `prov1, prov2, prov3` | `LLMProvider` | each with unique `{baseUrl, model, apiKey}` | Per-agent providers for cross-model diversity |
+| `cache` | `KVCache` | N temp sessions + 1 conv session | Shared in-memory store |
 | `jina` | `JinaSearchProvider` | composed (API key present) | Optional — uses JINA_API_KEY env var |
 
 ## 3. TerminalPresenter — Runtime Styling State

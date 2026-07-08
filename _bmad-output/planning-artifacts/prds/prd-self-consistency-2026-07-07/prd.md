@@ -2,7 +2,7 @@
 title: Self-Consistency Research Agent
 created: 2026-07-07
 updated: 2026-07-07
-status: draft
+status: locked
 ---
 
 # PRD: Self-Consistency Research Agent
@@ -13,14 +13,14 @@ This PRD is for me (Prajwal) as the sole developer and user. It defines the scop
 
 ## 1. Vision
 
-A CLI tool that takes a user query, spawns 3 independent research agents running chain-of-thought, collects their outputs, and passes them through a validation agent that synthesizes a coherent answer using majority-vote reasoning. The entire pipeline runs in the terminal with animated feedback. Built with hexagonal architecture — every external dependency (LLM provider, web search, session store) is behind a port interface and composed only if configured, so the system degrades gracefully when API keys are missing.
+A CLI tool that takes a user query, spawns N independent research agents (configurable, default 3) each running chain-of-thought with their own LLM provider, collects their outputs, and passes them through a validation agent that synthesizes a coherent answer using confidence scoring — showing divergent results when agents disagree. The entire pipeline runs in the terminal with animated feedback. Built with hexagonal architecture — every external dependency (LLM provider, web search, session store) is behind a port interface and composed only if configured, so the system degrades gracefully when API keys are missing.
 
 ## 2. Target User
 
 ### 2.1 Jobs To Be Done
 
 - **Research faster:** Get a synthesized answer from multiple LLM perspectives in one go rather than running separate queries.
-- **Validate assumptions:** Use the self-consistency check (3 agents + validator) to surface conflicting information and find the majority position.
+- **Validate assumptions:** Use the self-consistency check (N agents + validator) to surface conflicting information and find areas of agreement.
 - **Learn by watching:** See the chain-of-thought process of both research and validation agents.
 
 ### 2.2 Non-Users (v1)
@@ -31,7 +31,7 @@ A CLI tool that takes a user query, spawns 3 independent research agents running
 ### 2.3 Key User Journeys
 
 - **UJ-1. Prajwal researches a topic and gets a validated answer.**
-  Prajwal opens the terminal, runs the tool, and types a question. The orchestrator initializes the Conversation Session, spawns 3 research agents with temp sessions. The TUI shows "researching..." with animated dots. After agents complete, their temp sessions are deleted. The validation agent runs with its own temp session, thinking streams in real-time. Final answer is stored in Conversation Session as `{assistant}`, validation temp session deleted. Prajwal reads the output.
+  Prajwal opens the terminal, runs the tool, and types a question. The orchestrator initializes the Conversation Session, spawns research agents (per factory roster) with temp sessions. The TUI shows "researching..." with animated dots. After agents complete, their temp sessions are deleted. The validation agent runs with its own temp session, thinking streams in real-time. When results agree, a synthesized answer is delivered. When they diverge, confidence scores and differing results are shown. Final answer is stored in Conversation Session as `{assistant}`, validation temp session deleted. Prajwal reads the output.
 
 - **UJ-2. Prajwal runs the tool without a Jina API key.**
   The tool warns: "websearch disabled, falling back to internal knowledge." Research agents proceed using only the LLM's training data.
@@ -42,7 +42,7 @@ A CLI tool that takes a user query, spawns 3 independent research agents running
 ## 3. Glossary
 
 - **LLM Agent Wrapper** — Single reusable primitive that takes a tool set + system prompt and runs a chain-of-thought loop. Used for both research and validation agents.
-- **Research Agent** — Instance of the LLM Agent Wrapper configured with `{websearch, note}` tools + the sherlock research system prompt. 3 concurrent instances per query.
+- **Research Agent** — Instance of the LLM Agent Wrapper configured with `{websearch, note}` tools + own LLM provider + the sherlock research system prompt. N concurrent instances per query (configurable, default 3).
 - **Validation Agent** — Instance of the LLM Agent Wrapper configured with `{note}` tool only + the athena validation system prompt. 1 instance runs after research agents complete.
 - **Notebook** — Per-agent KV storage scoped to that agent instance. Stores intermediate chain-of-thought findings.
 - **Conversation Session** — Persistent orchestrator-owned session storing `{user, assistant}` pairs across query turns.
@@ -54,7 +54,7 @@ A CLI tool that takes a user query, spawns 3 independent research agents running
 
 ### 4.1 Agent Pipeline Orchestration
 
-**Description:** The orchestrator receives a user query from the TUI, composes available adapters (websearch, note) based on environment config, spawns 3 concurrent research agents, collects their outputs, dispatches to the validation agent, and streams the result back. The orchestrator owns a persistent Conversation Session storing `{user, assistant}` pairs. Each spawned agent gets a temporary Agent Session (for its notebook) that is deleted after completion. Realizes UJ-1.
+**Description:** The orchestrator receives a user query from the TUI, composes available adapters (websearch, note) based on environment config, spawns N concurrent research agents from the factory roster (each with their own LLM provider), collects their outputs, dispatches to the validation agent, and streams the result back. The orchestrator owns a persistent Conversation Session storing `{user, assistant}` pairs. Each spawned agent gets a temporary Agent Session (for its notebook) that is deleted after completion. Realizes UJ-1.
 
 **Functional Requirements:**
 
@@ -68,10 +68,11 @@ The orchestrator receives a user query from `TUI.input()`, appends it to the per
 
 #### FR-2: Concurrent research agent dispatch
 
-The orchestrator spawns 3 LLM Agent Wrapper instances concurrently, each with composed tools (websearch if configured, note always), a temporary Agent Session, and the research system prompt. Each agent gets its own isolated notebook scope within its temp session.
+The orchestrator spawns LLM Agent Wrapper instances concurrently from the factory roster, each with composed tools (websearch if configured, note always), its own LLM provider, a temporary Agent Session, and the research system prompt. Each agent gets its own isolated notebook scope within its temp session.
 
 **Consequences (testable):**
-- 3 agent instances are dispatched in parallel (Promise.all or equivalent).
+- N agent instances are dispatched in parallel (Promise.all or equivalent) based on factory roster.
+- Each agent has its own LLM provider with independent `baseUrl`, `model`, `apiKey`.
 - Each agent has its own temp Agent Session with isolated notebook scope.
 - Notebooks are not shared between agents.
 
@@ -84,14 +85,15 @@ Each research agent runs a chain-of-thought loop. On each step, it calls the LLM
 - Intermediate steps with `type !== "output"` are saved to the notebook.
 - Orchestrator deletes the agent's temp session after collecting its output.
 
-#### FR-4: Validation agent synthesis
+#### FR-4: Validation agent with confidence scoring
 
-All 3 research outputs are passed to the validation agent (configured with `{note}` tool only + temporary Agent Session + validation system prompt). It ranks similarity between answers and produces a coherent synthesized answer using majority-vote reasoning.
+All research outputs are passed to the validation agent (configured with `{note}` tool only + temporary Agent Session + validation system prompt). It uses confidence scoring based on agreement strength — when outputs converge, a synthesized answer is produced; when they diverge, confidence scores and differing results are shown to the user.
 
 **Consequences (testable):**
-- Validation agent receives all 3 research outputs as input.
+- Validation agent receives all research outputs as input.
 - Validation agent does NOT have access to websearch tools.
-- Final output is a synthesized answer, not a raw concatenation.
+- When outputs agree, final output is a synthesized answer, not a raw concatenation.
+- When outputs disagree, validation shows confidence scores alongside divergent answers.
 - Orchestrator appends the final answer to the Conversation Session as `{assistant}` then deletes the validation agent's temp session.
 
 ### 4.2 TUI Layer
@@ -137,7 +139,7 @@ When an optional adapter is unavailable (no API key), the TUI displays a warning
 
 ### 4.3 LLM Provider
 
-**Description:** Wraps the OpenAI SDK behind a port interface. Builds an OpenAI execution object at runtime with configurable `baseUrl`, `model`, `apiKey`. Supports `stream()`, `message()`, and `json()` output modes. Accepts a Zod schema for structured output via `outputFormat()`.
+**Description:** Wraps an LLM SDK (OpenAI-compatible) behind a port interface. Builds an execution object at runtime with configurable `baseUrl`, `model`, `apiKey`. Each research agent gets its own provider instance for cross-model diversity. Supports `stream()`, `message()`, and `json()` output modes. Accepts a Zod schema for structured output via `outputFormat()`.
 
 **Functional Requirements:**
 
@@ -202,7 +204,7 @@ A single shared JS object acts as the KV cache. Key structure: `{sessionKey: {no
 
 #### FR-14: Session lifecycle
 
-The orchestrator owns one persistent Conversation Session storing `{user, assistant}` pairs across turns. For each query, the orchestrator creates temp Agent Sessions for the 3 research agents and 1 validation agent. After all 4 complete, it deletes all temp sessions and stores the output in the Conversation Session.
+The orchestrator owns one persistent Conversation Session storing `{user, assistant}` pairs across turns. For each query, the orchestrator creates temp Agent Sessions for N research agents (from factory roster) and 1 validation agent. After all complete, it deletes all temp sessions and stores the output in the Conversation Session.
 
 **Consequences (testable):**
 - Conversation Session persists across multiple query turns with accumulated `{user, assistant}` pairs.
@@ -223,9 +225,9 @@ The orchestrator owns one persistent Conversation Session storing `{user, assist
 ### 6.1 In Scope
 
 - CLI query intake with TUI feedback
-- 3 concurrent research agents with chain-of-thought
+- N concurrent research agents (configurable, default 3) with chain-of-thought, each with own LLM provider
 - Web search via Jina (optional, degrades gracefully)
-- Validation agent with majority-vote synthesis
+- Validation agent with confidence scoring (shows divergent results)
 - Streaming validation thinking
 - In-memory KV session management
 - Chalk-based terminal styling
@@ -247,7 +249,7 @@ Success: I use this tool regularly for research queries and find synthesized ans
 ## 8. Open Questions
 
 1. How should the TUI handle very long chain-of-thought output? Truncation strategy?
-2. Should agent count be configurable (currently hardcoded to 3)?
+2. ~~Should agent count be configurable (currently hardcoded to 3)?~~ **RESOLVED: Configurable via factory `agentCount` with default 3. No hard limit on number of agents.**
 
 ## 9. Assumptions Index
 

@@ -76,16 +76,16 @@ interface ResearchAgentConfig {
 
 ---
 
-## Related Artifacts
+## Related Artifacts (Updated to Align)
 
-- [Project Brief](project-brief.md)
-- [PRD](prds/prd-self-consistency-2026-07-07/prd.md)
-- [Architecture Diagrams](architecture-diagrams.md)
-- [Class Diagram](class-diagram.md)
-- [Object Diagram](object-diagram.md)
-- [S1 — Query Lifecycle](s1-query-lifecycle.md)
-- [S2 — Agent CoT Loop](s2-agent-cot-loop.md)
+- [Project Brief](project-brief.md) — Updated: configurable agent count, per-agent providers, N not 3
+- [PRD](prds/prd-self-consistency-2026-07-07/prd.md) — Updated: status→locked, confidence scoring, per-agent providers, open question resolved
+- [Architecture Diagrams](architecture-diagrams.md) — Updated: per-agent LLM providers, two-phase factory, confidence scoring validation, ×N research agents
+- [Class Diagram](class-diagram.md) — Updated: two-phase factory (registerResearchAgent + spawnAll), per-agent ProviderConfig, roster management
+- [Object Diagram](object-diagram.md) — Updated: per-agent LLM providers with unique configs, factory roster state, N agents
+- [S1 — Query Lifecycle](s1-query-lifecycle.md) — Updated: session allocation after composition, per-agent providers, two-phase factory, confidence scoring
+- [S2 — Agent CoT Loop](s2-agent-cot-loop.md) — No changes needed (internal loop unaffected by agent count/provider config)
 
 ---
 
-*Locked by Prajwal after party validation. No further changes without a new round.*
+*Locked by Prajwal after party validation on 2026-07-07. All 6 related artifacts updated to align. No further changes without a new round.*

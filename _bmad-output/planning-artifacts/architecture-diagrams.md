@@ -25,10 +25,10 @@ flowchart LR
         Notebook["Own Notebook\n(per-agent KV scope)"]
     end
 
-    subgraph LLM_Provider["LLM Provider"]
+    subgraph LLM_Provider["LLM Providers (per-agent)"]
         direction TB
-        Config["config: baseUrl, model, apiKey"]
-        Exec["OpenAI Execution Object"]
+        P1["Research Agent 1\nprovider: config{baseUrl, model, apiKey}"]
+        P2["Research Agent N\nprovider: config{baseUrl, model, apiKey}"]
     end
 
     subgraph Adapters["Adapters (Hexagonal — composed by config)"]
@@ -36,7 +36,7 @@ flowchart LR
     end
 
     subgraph Storage["Shared In-Memory KV Cache"]
-        KVCache["convSession: {user, assistant}[]<br/>── per query ──<br/>agentSession_1: {notebook: [...]}<br/>agentSession_2: {notebook: [...]}<br/>agentSession_3: {notebook: [...]}<br/>valSession: {notebook: [...]}<br/>── all temp sessions deleted after completion ──"]
+        KVCache["convSession: {user, assistant}[]<br/>── per query ──<br/>agentSession_1: {notebook: [...]}<br/>agentSession_N: {notebook: [...]}<br/>valSession: {notebook: [...]}<br/>── all temp sessions deleted after completion ──"]
     end
 
     TUI --> TUIMgr
@@ -46,14 +46,13 @@ flowchart LR
     Session -->|reads/writes| KVCache
 
     Orchestrator -->|compose adapters\nby config| Adapters
-    Orchestrator -->|spawn 3x + temp sessions| AgentInstance
-    Orchestrator -->|spawn 1x + temp session| AgentInstance
+    Orchestrator -->|spawn from roster + temp sessions| AgentInstance
     Orchestrator -->|delete temp sessions after done| KVCache
     Orchestrator -->|append output to convSession| KVCache
 
     CoT -.->|if composed| WebSearch
-    CoT --> Config
-    Config --> Exec
+    CoT ..-> P1
+    CoT ..-> P2
 
     CoT -->|save/read| Notebook
     Notebook -->|temp agent session| KVCache
@@ -73,11 +72,11 @@ sequenceDiagram
     participant TUI as CLI / TUI
     participant TUIMgr as TUI Manager
     participant Orch as Orchestrator
+    participant Factory as AgentFactory
     participant Conv as Conversation Session<br/>{user, assistant}[]
-    participant W1 as Research Agent 1<br/>(composed tools + temp session)
-    participant W2 as Research Agent 2<br/>(composed tools + temp session)
-    participant W3 as Research Agent 3<br/>(composed tools + temp session)
-    participant LLM as LLM Provider
+    participant W1 as Research Agent 1<br/>(own provider + tools + temp session)
+    participant W2 as Research Agent 2<br/>(own provider + tools + temp session)
+    participant WN as Research Agent N<br/>(own provider + tools + temp session)
     participant Val as Validation Agent<br/>(note + temp session)
     participant KV as Agent Session KV\n(Temp — per agent)
 
@@ -85,26 +84,28 @@ sequenceDiagram
     TUI->>TUIMgr: input("ask anything...")
     TUIMgr->>Orch: submit query
     Orch->>Conv: append {user: query}
-    Orch->>KV: create temp sessions for research agents ×3
-    Orch->>KV: create temp session for validation agent ×1
+    Orch->>Factory: getRoster()
+    Factory-->>Orch: [agentConfigs]
 
     alt "no JINA_API_KEY"
         Orch->>TUIMgr: warn("websearch disabled, falling back to internal knowledge")
         TUIMgr->>TUI: render
     end
 
+    Orch->>KV: create temp sessions for N research agents
+    Orch->>KV: create temp session for validation agent
+
     Orch->>TUIMgr: showthinking("researching...", {timeout: 0, showall: true})
     TUIMgr->>TUI: render
 
     par Concurrent Research
-        Orch->>W1: run(query, conv history, {composed tools, temp session}, research-prompt)
-        Orch->>W2: run(query, conv history, {composed tools, temp session}, research-prompt)
-        Orch->>W3: run(query, conv history, {composed tools, temp session}, research-prompt)
+        Orch->>W1: run(query, conv history, {own provider, tools, temp session}, research-prompt)
+        Orch->>W2: run(query, conv history, {own provider, tools, temp session}, research-prompt)
+        Orch->>WN: run(query, conv history, {own provider, tools, temp session}, research-prompt)
     end
 
     loop Chain of Thought (per agent)
-        W1->>LLM: step()
-        LLM-->>W1: response {type, content}
+        W1->>W1: step() using own LLM provider
         alt type != "output"
             W1->>KV: save to temp notebook
         else type == "output"
@@ -116,7 +117,11 @@ sequenceDiagram
     Orch->>Val: validate(results, conv history, {note, temp session}, validation-prompt)
     Val->>TUIMgr: showthinking(intermediate, {timeout: null, showall: true})
     TUIMgr->>TUI: render
-    Val-->>TUIMgr: output(validated result)
+    alt results agree
+        Val-->>TUIMgr: output(synthesized answer)
+    else results diverge
+        Val-->>TUIMgr: output(confidence scores + divergent answers)
+    end
     TUIMgr-->>TUI: render
     Orch->>Conv: append {assistant: validated result}
     Orch->>KV: delete all temp sessions
@@ -131,16 +136,16 @@ sequenceDiagram
 stateDiagram-v2
     state "Conversation Session (Orchestrator)" as CS
     state "Query Cycle" as QC
-    state "Research Agent Temp Session ×3" as RAS
+    state "Research Agent Temp Session ×N" as RAS
     state "Validation Agent Temp Session" as VAS
 
     [*] --> CS: app starts
     CS --> QC: user submits query
-    QC --> RAS: create 3 temp sessions, spawn agents
+    QC --> RAS: create N temp sessions, spawn agents (per roster)
     RAS --> RAS: chain-of-thought step (type != output)
     RAS --> QC: all agents output collected, temp sessions deleted
     QC --> VAS: create validation temp session
-    VAS --> VAS: validate (majority-vote reasoning)
+    VAS --> VAS: validate (confidence scoring, show divergences)
     VAS --> CS: output appended as {assistant}, temp session deleted
     CS --> QC: next query
 
@@ -165,9 +170,9 @@ flowchart TB
     subgraph CoreHex["Core Domain"]
         direction TB
         Wrapper["LLM Agent Wrapper\n(single primitive)"]
-        Factory["Agent Factory\n(research config / validation config)"]
-        Orch["Orchestrator\n(composes adapters by config)"]
-        LLMConfig["LLM Config\nbaseUrl, model, apiKey"]
+        Factory["Agent Factory\n(registerResearchAgent + spawnAll)"]
+        Orch["Orchestrator\n(composes adapters by config, gets roster from factory)"]
+        LLMConfig["Per-Agent Provider Config\n{baseUrl, model, apiKey}[]"]
     end
 
     subgraph AdaptersHex["Adapters"]
@@ -176,11 +181,10 @@ flowchart TB
         SessionAdapter["SessionAdapter\n(always composed)"]
     end
 
-    subgraph LLM_Impl["LLM Provider (Implementation)"]
+    subgraph LLM_Impl["LLM Provider Instances (per-agent)"]
         direction TB
-        LLM_IF["Implements LLMProviderPort"]
-        Builder["Builds OpenAI Execution Object\n(baseUrl, model, apiKey)"]
-        SDK["OpenAI SDK"]
+        Provider1["Provider Instance 1\n(model A: baseUrl, apiKey)"]
+        ProviderN["Provider Instance N\n(model B: baseUrl, apiKey)"]
     end
 
     subgraph Storage["Shared In-Memory KV Cache"]
@@ -192,16 +196,15 @@ flowchart TB
     end
 
     Orch -->|compose| Factory
-    Factory --> Wrapper
+    Factory -->|registerResearchAgent| LLMConfig
+    Factory -->|spawnAll| Wrapper
     Wrapper --> IP_LM
     Wrapper --> IP_Web
     Wrapper --> IP_Note
     Wrapper --> IP_Session
-    LLMConfig --> Wrapper
 
-    IP_LM --> LLM_IF
-    LLM_IF --> Builder
-    Builder --> SDK
+    IP_LM --> Provider1
+    IP_LM --> ProviderN
 
     IP_Web --> JinaProvider
     IP_Note --> NoteAdapter
@@ -226,18 +229,31 @@ flowchart TB
 flowchart LR
     subgraph Factory["Agent Factory"]
         direction TB
-        A1["Research Agent<br/>systemPrompt: research<br/>tools: [websearch?, note]<br/>instances: 3"]
-        A2["Validation Agent<br/>systemPrompt: validation<br/>tools: [note]<br/>instances: 1"]
+        Roster["registerResearchAgent(providerConfig)\n— called N times to build roster"]
+        Spawn["spawnAll()\n— dispatches all registered agents"]
+    end
+
+    subgraph ResearchConfig["Per Research Agent Config"]
+        direction TB
+        RC["provider: {baseUrl, apiKey, model}<br/>tools: [websearch?, note]<br/>systemPrompt: research"]
+    end
+
+    subgraph ValidationConfig["Validation Agent"]
+        direction TB
+        VC["tools: [note]<br/>systemPrompt: validation<br/>instances: 1"]
     end
 
     subgraph PerInstance["Per Instance (spawned)"]
         direction TB
         CoT["own chain-of-thought loop"]
         NB["own notebook\n(isolated KV scope)"]
+        LP["own LLM provider\n(per research agent)"]
     end
 
-    A1 --> PerInstance
-    A2 --> PerInstance
+    Roster --> ResearchConfig
+    Spawn --> PerInstance
+    ResearchConfig --> PerInstance
+    ValidationConfig --> PerInstance
 ```
 
 ---

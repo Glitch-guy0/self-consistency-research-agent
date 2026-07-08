@@ -7,13 +7,13 @@
 
 ## Overview
 
-A CLI-based self-consistency research agent built with Node.js/TypeScript (ESM). The system takes a user query, spawns 3 concurrent LLM workers running chain-of-thought, collects their outputs, passes them through a validation agent, and streams the result to the terminal.
+A CLI-based self-consistency research agent built with Node.js/TypeScript (ESM). The system takes a user query, spawns N concurrent research agents (configurable, default 3) each running chain-of-thought with their own LLM provider, collects their outputs, passes them through a validation agent using confidence scoring, and streams the result to the terminal.
 
 ## Architecture Style
 
 Hexagonal (ports & adapters) — every adapter follows the composition pattern. The orchestrator composes only the adapters that are configured and available. Missing API keys don't throw errors; the adapter simply isn't composed and the system degrades gracefully.
 
-The LLM provider implementation wraps the OpenAI SDK. At execution time it builds an OpenAI execution object with configurable `baseUrl`, `model`, and `apiKey` — all exposed at the top configuration layer.
+Each research agent gets its own LLM provider instance with independent `baseUrl`, `model`, and `apiKey`, enabling different models/providers per agent (GPT-4o, Claude, Gemini, etc.) for genuine independence. Agents are registered via a two-phase factory: `registerResearchAgent(providerConfig)` builds the roster, `spawnAll()` dispatches them.
 
 Both the note tool adapter and session adapter point to the same shared in-memory KV cache, keeping the storage layer unified and swappable.
 
@@ -33,9 +33,9 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 
 - **Orchestrator** — receives user query, initializes session, spawns agents, manages pipeline
 - **LLM Agent Wrapper** — generic agent that takes a tool set + system prompt and runs chain-of-thought. Each spawned instance gets its own chain-of-thought loop and its own isolated notebook. This is the single reusable primitive for both research and validation.
-- **Research Agents** — 3 concurrent LLM Agent Wrapper instances, each with its own `{websearch, note}` tools + research system prompt + private notebook
+- **Research Agents** — N concurrent LLM Agent Wrapper instances (configurable, default 3), each with its own `{websearch, note}` tools + research system prompt + private notebook + its own LLM provider
 - **Validation Agent** — single LLM Agent Wrapper instance with its own `{note}` tool only + validation system prompt + private notebook (no web search)
-- **LLM Provider** — wraps OpenAI SDK; builds an execution object at runtime with configurable `baseUrl`, `model`, `apiKey`. These configs are exposed at the top layer (orchestrator / agent factory).
+- **LLM Provider** — wraps an LLM SDK (OpenAI-compatible); builds an execution object at runtime with configurable `baseUrl`, `model`, `apiKey`. Each research agent gets its own provider instance for cross-model diversity.
 - **Web Search Provider** — wraps Jina Search API via `IWebSearchProvider` interface. Single `JinaSearchProvider` implementation uses separate URIs: `https://s.jina.ai/` for search and `https://r.jina.ai/` for parse. Constructor accepts optional `apiKey`; internally checks `JINA_API_KEY` env var. Falls back to agent internal knowledge when disabled, with a warning notification.
 - **TerminalPresenter** — Optional styling component consumed by `TUIManager`. Interface `ITerminalPresenter` exposes `render({color?, bgcolor?, opacity?})` for fine-grained control plus `success()`, `fail()`, `warning()` wrappers. Two implementations: `ChalkPresenter` (uses Chalk when available) and `PlainPresenter` (no styling, direct terminal write). Swappable for any chalk-like library.
 - **Note Tool Adapter** — per-agent KV dictionary scoped to that agent instance; each agent's notebook is isolated within the shared in-memory KV cache
@@ -52,7 +52,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 ## Session Lifecycle
 
 - **Orchestrator (Conversation Session):** persistent session storing `{user, assistant}` pairs across query turns. Passed as context to each new query iteration.
-- **Research Agents (temp sessions):** each of the 3 agents gets a temporary session for its notebook. Deleted by the orchestrator after the agent's output is collected.
+- **Research Agents (temp sessions):** each agent gets a temporary session for its notebook. Deleted by the orchestrator after the agent's output is collected.
 - **Validation Agent (temp session):** gets a temporary session for its notebook. Deleted by the orchestrator after the final answer is appended to the Conversation Session.
 
 ## Agent Tools
@@ -66,9 +66,9 @@ All adapters follow the composition pattern:
 1. TUI Manager calls `input("ask anything...")`, user submits query
 2. Session initialized in in-memory KV store
 3. TUI Manager calls `showthinking("researching...", {timeout: 0, showall: true})` — animated dots render in terminal
-4. 3 concurrent research agents dispatched, each with `{websearch, note}` tools + research system prompt
+4. N research agents dispatched concurrently (per factory roster), each with their own LLM provider + `{websearch, note}` tools + research system prompt
 5. Each runs chain-of-thought, checking response type — `output` means complete, otherwise save to notebook and continue
-6. All outputs collected and sent to validation agent (single instance, `{note}` tool only, validation system prompt)
+6. All outputs collected and sent to validation agent (single instance, `{note}` tool only, validation system prompt) which uses confidence scoring and shows divergent results when answers disagree
 7. Validation agent's intermediate thinking streamed via `showthinking(text, {timeout: null, showall: true})`
 8. Final result delivered via `output(string)`
 
@@ -79,7 +79,7 @@ All adapters follow the composition pattern:
 | # | Goal | Success Criteria | Status |
 |---|------|------------------|--------|
 | G1 | CLI accepts user query | Input received, session initialized in KV | ☐ |
-| G2 | 3 concurrent research agents | 3 agent instances dispatched, each with `{websearch, note}` + research prompt | ☐ |
+| G2 | Concurrent research agents (configurable) | N agent instances dispatched (default 3), each with own LLM provider + `{websearch, note}` + research prompt | ☐ |
 | G3 | Response type resolution | Agents loop until type=`output`; intermediates saved to notebook | ☐ |
 | G4 | TUI animation | "researching..." with animated dots during processing | ☐ |
 | G5 | Single agent wrapper | Both research and validation use the same LLM Agent Wrapper with different config | ☐ |

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Validation — Self-Consistency Research Agent</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, monospace;
+    background: #0d1117;
+    color: #c9d1d9;
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: #f0f6fc; }
+  .subtitle { color: #8b949e; margin-bottom: 2rem; font-size: 0.9rem; }
+  .scene {
+    border-left: 2px solid #30363d;
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+    color: #8b949e;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+  .message {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+    animation: fadeIn 0.4s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .icon {
+    font-size: 1.5rem;
+    min-width: 2rem;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .bubble {
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+  }
+  .name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  .name .title {
+    font-weight: 400;
+    color: #8b949e;
+    font-size: 0.8rem;
+  }
+  .bubble p { margin-bottom: 0.5rem; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .divider {
+    border: none;
+    border-top: 1px solid #21262d;
+    margin: 2rem 0;
+  }
+  .decision {
+    background: #0d1f1a;
+    border: 1px solid #238636;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .decision h3 {
+    color: #3fb950;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  .votes { margin-top: 2rem; padding: 1rem; background: #161b22; border-radius: 8px; border: 1px solid #30363d; }
+  .votes h3 { margin-bottom: 0.75rem; color: #f0f6fc; }
+  .vote { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
+  .check { color: #3fb950; }
+  .glow { text-align: center; padding: 2rem 0 1rem; color: #8b949e; }
+  .glow span { color: #f0f6fc; font-weight: 600; }
+  @media (max-width: 600px) {
+    body { padding: 1rem; }
+    .message { flex-direction: column; gap: 0.25rem; }
+    .icon { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🧠 Plan Validation Session</h1>
+<p class="subtitle">Self-Consistency Research Agent — 2026-07-07</p>
+
+<div class="scene">
+  📍 The Roundtable — Four minds, one plan, zero rubber-stamps.<br>
+  Present: Mary (Analyst), John (PM), Winston (Architect), Paige (Tech Writer)
+</div>
+
+<hr class="divider">
+
+<!-- Mary -->
+<div class="message">
+  <div class="icon">📊</div>
+  <div class="bubble">
+    <div class="name">Mary <span class="title">· Business Analyst</span></div>
+    <p>"The hexagonal boundary is clean, but that number 3 feels arbitrary. Why not 2 or 5? If we're wrong, swapping it later means touching the orchestrator, the factory, and probably the TUI copy. I'd like that pinned."</p>
+  </div>
+</div>
+
+<!-- John -->
+<div class="message">
+  <div class="icon">📋</div>
+  <div class="bubble">
+    <div class="name">John <span class="title">· Product Manager</span></div>
+    <p>"3 is the smallest odd number &gt; 1 that gives you a majority signal. It's the MVP minimum. What I'm more worried about: the validation agent does 'majority-vote reasoning' but there's zero spec on what happens when all 3 answers disagree."</p>
+  </div>
+</div>
+
+<!-- Winston -->
+<div class="message">
+  <div class="icon">🏗️</div>
+  <div class="bubble">
+    <div class="name">Winston <span class="title">· System Architect</span></div>
+    <p>"The 3 is fine — it's a constant in AgentConfig. What bothers me: the sequence shows pre-allocating session slots before checking whether websearch is composed. Also — 4 OpenAI clients per query. At what concurrency do we rate-limit?"</p>
+  </div>
+</div>
+
+<!-- Paige -->
+<div class="message">
+  <div class="icon">📚</div>
+  <div class="bundle">
+    <div class="bubble">
+      <div class="name">Paige <span class="title">· Technical Writer</span></div>
+      <p>"I'm noting all of this. The pre-allocation vs composition ordering is a sequence diagram bug, not a code bug — I can fix that. But the rate-limit question needs a concrete answer."</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="message" style="border-left: 2px solid #58a6ff; padding-left: 1rem;">
+  <div class="icon">🧑‍💻</div>
+  <div class="bubble" style="border-color: #58a6ff;">
+    <div class="name">Prajwal <span class="title">· Decision</span></div>
+    <p>1. Make agent count configurable<br>
+       2. Use confidence scoring — show different results when they diverge<br>
+       3. Each agent has its own LLM provider with different models/providers<br>
+       4. Add a method to register research agents with (baseUrl, apiKey, model)<br>
+       5. Connection pooling deferred to post-performance-update<br>
+       6. No hard limit on agent count</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="decision">
+  <h3>✅ Decision 1 — Configurable Agent Count</h3>
+  <p>Default 3, configurable via <code>agentCount</code> in factory config. No hard cap.</p>
+</div>
+
+<div class="decision">
+  <h3>✅ Decision 2 — Confidence Scoring</h3>
+  <p>Validation uses agreement-strength analysis. When answers converge → synthesized output. When they diverge → confidence scores + differing results shown.</p>
+</div>
+
+<div class="decision">
+  <h3>✅ Decision 3 — Per-Agent LLM Providers</h3>
+  <p>Each research agent gets its own <code>{baseUrl, apiKey, model}</code>. GPT-4o, Claude, Gemini — genuine independence.</p>
+</div>
+
+<div class="decision">
+  <h3>✅ Decision 4 — Two-Phase Factory</h3>
+  <p><code>registerResearchAgent(providerConfig)</code> builds the roster, <code>spawnAll()</code> dispatches. The factory is a roster manager.</p>
+</div>
+
+<div class="decision">
+  <h3>🔶 Decision 5 — Connection Pooling Deferred</h3>
+  <p>Ship without it, measure, decide later. Not a correctness concern.</p>
+</div>
+
+<div class="votes">
+  <h3>🗳️ Final Votes</h3>
+  <div class="vote"><span class="check">✓</span> 📊 Mary — "Configurable count, per-agent providers, normalization across models. Caught before they bit us."</div>
+  <div class="vote"><span class="check">✓</span> 📋 John — "Two-phase factory keeps the orchestrator clean. No cap means user owns the consequences."</div>
+  <div class="vote"><span class="check">✓</span> 🏗️ Winston — "Architecture holds. Per-agent provider config was the biggest delta. Connection pool can wait."</div>
+  <div class="vote"><span class="check">✓</span> 📚 Paige — "Locked document in planning artifacts. Everything cross-references. Ready to build."</div>
+</div>
+
+<div class="glow">
+  <span>Plan Locked</span> · 6 documents updated to align · 2026-07-07
+</div>
+
+</body>
+</html>

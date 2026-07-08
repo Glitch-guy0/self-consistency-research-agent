@@ -128,29 +128,37 @@ classDiagram
     }
 
     class AgentFactory {
-        +createResearchAgent(config: AgentConfig) LLMAgentWrapper
-        +createValidationAgent(config: AgentConfig) LLMAgentWrapper
+        -roster: ResearchAgentConfig[]
+        +registerResearchAgent(config: ResearchAgentConfig) void
+        +spawnAll() LLMAgentWrapper[]
+        +createValidationAgent(config: ValidationAgentConfig) LLMAgentWrapper
     }
 
-    class AgentConfig {
+    class ResearchAgentConfig {
         +tools: string[]
         +systemPrompt: string
-        +llmConfig: LLMConfig
+        +provider: ProviderConfig
         +sessionId: string
     }
 
-    class LLMConfig {
+    class ValidationAgentConfig {
+        +tools: string[]
+        +systemPrompt: string
+        +sessionId: string
+    }
+
+    class ProviderConfig {
         +baseUrl: string
         +model: string
         +apiKey: string
-        +maxRetries: number
     }
 
     Orchestrator --> ITUIManager : uses
     Orchestrator --> ISessionPort : owns
     Orchestrator --> AgentFactory : configures
 
-    AgentFactory --> AgentConfig : reads
+    AgentFactory --> ResearchAgentConfig : builds roster
+    AgentFactory --> ValidationAgentConfig : reads
     AgentFactory --> LLMAgentWrapper : creates
 
     style Orchestrator fill:#e8f5e9,stroke:#2e7d32
@@ -161,7 +169,7 @@ classDiagram
 
 ## 3. Agent Internals — Tool Composition
 
-Every agent is the same `LLMAgentWrapper` primitive. What differs is its `ToolSet` — composed at factory time from configured adapters. Research agents get `websearch + note`; validation agents get `note` only. The LLM provider is the single external dependency all agents share.
+Every agent is the same `LLMAgentWrapper` primitive. What differs is its `ToolSet` — composed at factory time from configured adapters. Research agents get `websearch + note` + their own LLM provider; validation agents get `note` only. The LLM provider is per-agent for research instances, enabling cross-model diversity.
 
 ```mermaid
 classDiagram
@@ -183,7 +191,7 @@ classDiagram
 
     class LLMProvider~U, V~ {
         -client: OpenAI
-        -config: LLMConfig
+        -config: ProviderConfig
         +stream() Promise~ReadableStream~
         +message() Promise~string~
         +json() Promise~U~
@@ -191,7 +199,7 @@ classDiagram
     }
 
     LLMAgentWrapper --> ToolSet : composes
-    LLMAgentWrapper --> ILLMProvider : uses
+    LLMAgentWrapper --> ILLMProvider : uses (per-agent instance for research)
     LLMAgentWrapper --> INoteToolPort : writes
     LLMAgentWrapper --> ISessionPort : manages
     LLMAgentWrapper --> AgentOutput : produces
@@ -199,7 +207,7 @@ classDiagram
     ToolSet --> IWebSearchProvider : optional
     ToolSet --> INoteToolPort : required
 
-    LLMProvider --> LLMConfig : reads
+    LLMProvider --> ProviderConfig : reads
 
     style LLMAgentWrapper fill:#e8f5e9,stroke:#2e7d32
 ```
@@ -265,9 +273,9 @@ classDiagram
 
 ## Key Relationships
 
-- **Orchestrator** owns the lifecycle: composes adapters, spawns agents, manages Conversation Session
-- **AgentFactory** produces `LLMAgentWrapper` instances with different configs (research vs validation)
-- **LLMAgentWrapper** is the single reusable primitive — takes a `ToolSet` + `systemPrompt` and runs CoT
+- **Orchestrator** owns the lifecycle: composes adapters, gets roster from factory, spawns agents, manages Conversation Session
+- **AgentFactory** maintains research agent roster via `registerResearchAgent()` + `spawnAll()` two-phase flow
+- **LLMAgentWrapper** is the single reusable primitive — takes a `ToolSet` + own LLM provider + `systemPrompt` and runs CoT
 - **ToolSet** is composed at factory time based on environment config (optional adapters excluded when keys missing)
 - **KVCache** is the shared in-memory store backing both `NoteToolAdapter` and `SessionAdapter`
 
