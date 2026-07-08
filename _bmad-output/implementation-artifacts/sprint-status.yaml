@@ -30,10 +30,12 @@ project_key: NOKEY
 tracking_system: file-system
 story_location: /Users/prajwal/Documents/learning/self-consistency/_bmad-output/implementation-artifacts
 
+# Last update: created story 1-1-project-scaffold
+
 development_status:
   # Epic 1: Foundation & Core Infrastructure
-  epic-1: backlog
-  1-1-project-scaffold: backlog
+  epic-1: in-progress
+  1-1-project-scaffold: ready-for-dev
   1-2-environment-config-loader: backlog
   1-3-shared-in-memory-kvcache: backlog
   1-4-notetool-port-interface-and-notetool-adapter: backlog
