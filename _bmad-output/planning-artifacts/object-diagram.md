@@ -63,7 +63,7 @@ classDiagram
         store = conv plus 4 temp
     }
 
-    class jina:JinaSearchAdapter {
+    class jina:JinaSearchProvider {
         apiKey = present
     }
 
@@ -133,7 +133,7 @@ stateDiagram-v2
 | `v1` | `LLMAgentWrapper` | not yet created | Validation agent (pending) |
 | `p1` | `LLMProvider` | wraps OpenAI SDK | Shared by all agents |
 | `cache` | `KVCache` | 3 temp sessions + 1 conv session | Shared in-memory store |
-| `jina` | `JinaSearchAdapter` | composed (API key present) | Optional adapter |
+| `jina` | `JinaSearchProvider` | composed (API key present) | Optional — uses JINA_API_KEY env var |
 
 ## 3. TerminalPresenter — Runtime Styling State
 

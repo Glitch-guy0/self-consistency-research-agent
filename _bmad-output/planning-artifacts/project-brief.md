@@ -25,8 +25,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 | Language | TypeScript 6.0.3 (strict) |
 | Core deps | OpenAI SDK, Zod, Chalk |
 | LLM Provider | OpenAI (via SDK) |
-| Web Search | Jina Search API (optional — composed only if API key present) |
-| Jira | Jira REST API (optional — composed only if API key present) |
+| Web Search | Jina Search API (optional — `JINA_API_KEY` env var, falls back to internal knowledge) |
 | Session Store | In-memory KV (session dictionary) |
 | TUI | Chalk + terminal (via `ITerminalPresenter` interface — swappable) |
 
@@ -37,8 +36,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 - **Research Agents** — 3 concurrent LLM Agent Wrapper instances, each with its own `{websearch, note}` tools + research system prompt + private notebook
 - **Validation Agent** — single LLM Agent Wrapper instance with its own `{note}` tool only + validation system prompt + private notebook (no web search)
 - **LLM Provider** — wraps OpenAI SDK; builds an execution object at runtime with configurable `baseUrl`, `model`, `apiKey`. These configs are exposed at the top layer (orchestrator / agent factory).
-- **Web Search Adapter** — wraps Jina Search API (search + content parsing). Optional — composed only if JINA_API_KEY is present. Falls back to agent internal knowledge when disabled, with a warning notification.
-- **Jira Adapter** — wraps Jira REST API for querying project data. Optional — composed only if JIRA_API_KEY is present. If missing, the adapter is excluded from composition (no error).
+- **Web Search Provider** — wraps Jina Search API via `IWebSearchProvider` interface. Single `JinaSearchProvider` implementation uses separate URIs: `https://s.jina.ai/` for search and `https://r.jina.ai/` for parse. Constructor accepts optional `apiKey`; internally checks `JINA_API_KEY` env var. Falls back to agent internal knowledge when disabled, with a warning notification.
 - **TerminalPresenter** — Optional styling component consumed by `TUIManager`. Interface `ITerminalPresenter` exposes `render({color?, bgcolor?, opacity?})` for fine-grained control plus `success()`, `fail()`, `warning()` wrappers. Two implementations: `ChalkPresenter` (uses Chalk when available) and `PlainPresenter` (no styling, direct terminal write). Swappable for any chalk-like library.
 - **Note Tool Adapter** — per-agent KV dictionary scoped to that agent instance; each agent's notebook is isolated within the shared in-memory KV cache
 - **Session Manager** — in-memory KV dictionary for session lifecycle; backed by the same shared in-memory KV cache as the note tool (implements SessionPort; swappable for Redis later)
@@ -60,8 +58,7 @@ Both the note tool adapter and session adapter point to the same shared in-memor
 ## Agent Tools
 
 All adapters follow the composition pattern:
-- **websearch:** Jina Search API (query → markdown results) — available to research agents only. Optional. If `JINA_API_KEY` is not set, the adapter is omitted and the agent falls back to internal knowledge. A warning is shown via `warn()`.
-- **jira:** Jira REST API — optional. If `JIRA_API_KEY` is not set, the adapter is omitted (no error).
+- **websearch:** Jina Search API via `IWebSearchProvider` — available to research agents only. Optional. If `JINA_API_KEY` is not set, the provider is omitted and the agent falls back to internal knowledge. A warning is shown via `warn()`.
 - **note:** per-agent KV dictionary, not shared across agents
 
 ## Flow
@@ -91,6 +88,5 @@ All adapters follow the composition pattern:
 | G8 | Session lifecycle | Research session terminates; validation session persists | ☐ |
 | G9 | Composition pattern | All adapters composed by config; missing API keys disable adapters without errors | ☐ |
 | G10 | Websearch optional | Falls back to internal knowledge when disabled, with `warn()` notification | ☐ |
-| G11 | Jira integration | Optional Jira adapter composed only if API key present | ☐ |
-| G12 | Jina Search API integration | Search + parsing via Jina, abstracted behind `websearch` interface | ☐ |
+| G11 | Jina Search API integration | Search + parsing with separate URIs via `IWebSearchProvider` / `JinaSearchProvider` | ☐ |
 | G13 | Pluggable terminal styling | `TUIManager` optionally composes `ITerminalPresenter`; `ChalkPresenter` when chalk available, `PlainPresenter` fallback; swappable interface | ☐ |

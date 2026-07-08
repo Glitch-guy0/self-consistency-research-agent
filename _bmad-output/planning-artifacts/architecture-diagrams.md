@@ -32,8 +32,7 @@ flowchart LR
     end
 
     subgraph Adapters["Adapters (Hexagonal — composed by config)"]
-        WebSearch["Web Search Adapter\n(Jina API) — optional"]
-        JiraAdapter["Jira Adapter\n(Jira REST API) — optional"]
+        WebSearch["JinaSearchProvider\n(Jina API) — optional"]
     end
 
     subgraph Storage["Shared In-Memory KV Cache"]
@@ -53,7 +52,6 @@ flowchart LR
     Orchestrator -->|append output to convSession| KVCache
 
     CoT -.->|if composed| WebSearch
-    CoT -.->|if composed| JiraAdapter
     CoT --> Config
     Config --> Exec
 
@@ -159,8 +157,7 @@ stateDiagram-v2
 flowchart TB
     subgraph Ports["Ports (Interfaces)"]
         IP_LM["LLMProviderPort"]
-        IP_Web["WebSearchPort\n(optional)"]
-        IP_Jira["JiraPort\n(optional)"]
+        IP_Web["IWebSearchProvider"]
         IP_Note["NoteToolPort"]
         IP_Session["SessionPort"]
     end
@@ -174,8 +171,7 @@ flowchart TB
     end
 
     subgraph AdaptersHex["Adapters"]
-        JinaAdapter["JinaSearchAdapter\n(composed if JINA_API_KEY set)"]
-        JiraAdapter["JiraAdapter\n(composed if JIRA_API_KEY set)"]
+        JinaProvider["JinaSearchProvider\n(uses JINA_API_KEY env var)"]
         NoteAdapter["NoteToolAdapter\n(always composed)"]
         SessionAdapter["SessionAdapter\n(always composed)"]
     end
@@ -192,15 +188,13 @@ flowchart TB
     end
 
     subgraph External["External"]
-        JinaAPI["Jina Search API"]
-        JiraExt["Jira REST API"]
+        JinaAPI["Jina Search API\nsearch: https://s.jina.ai/\nparse: https://r.jina.ai/"]
     end
 
     Orch -->|compose| Factory
     Factory --> Wrapper
     Wrapper --> IP_LM
     Wrapper --> IP_Web
-    Wrapper --> IP_Jira
     Wrapper --> IP_Note
     Wrapper --> IP_Session
     LLMConfig --> Wrapper
@@ -209,23 +203,19 @@ flowchart TB
     LLM_IF --> Builder
     Builder --> SDK
 
-    IP_Web -.->|if composed| JinaAdapter
-    IP_Jira -.->|if composed| JiraAdapter
+    IP_Web --> JinaProvider
     IP_Note --> NoteAdapter
     IP_Session --> SessionAdapter
 
     NoteAdapter --> KVCache
     SessionAdapter --> KVCache
 
-    JinaAdapter --> JinaAPI
-    JiraAdapter --> JiraExt
+    JinaProvider --> JinaAPI
 
     style Factory fill:#e1f5e1,stroke:#2e7d32
     style KVCache fill:#fce4ec,stroke:#c62828
     style IP_Web stroke-dasharray: 5 5
-    style IP_Jira stroke-dasharray: 5 5
-    style JinaAdapter stroke-dasharray: 5 5
-    style JiraAdapter stroke-dasharray: 5 5
+    style JinaProvider stroke-dasharray: 5 5
 ```
 
 ---
@@ -236,7 +226,7 @@ flowchart TB
 flowchart LR
     subgraph Factory["Agent Factory"]
         direction TB
-        A1["Research Agent<br/>systemPrompt: research<br/>tools: [websearch?, jira?, note]<br/>instances: 3"]
+        A1["Research Agent<br/>systemPrompt: research<br/>tools: [websearch?, note]<br/>instances: 3"]
         A2["Validation Agent<br/>systemPrompt: validation<br/>tools: [note]<br/>instances: 1"]
     end
 

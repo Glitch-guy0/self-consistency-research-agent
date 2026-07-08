@@ -24,15 +24,10 @@ classDiagram
         +useroutput() void
     }
 
-    class IWebSearchPort {
+    class IWebSearchProvider {
         <<Interface>>
         +search(query: string) string
         +parse(url: string) string
-    }
-
-    class IJiraPort {
-        <<Interface>>
-        +query(params: string) any
     }
 
     class INoteToolPort {
@@ -65,16 +60,10 @@ classDiagram
         +outputFormat(schema: ZodType) ILLMProvider
     }
 
-    class JinaSearchAdapter {
+    class JinaSearchProvider {
         -apiKey: string
         +search(query: string) string
         +parse(url: string) string
-    }
-
-    class JiraAdapter {
-        -apiKey: string
-        -baseUrl: string
-        +query(params: string) any
     }
 
     class NoteToolAdapter {
@@ -104,8 +93,7 @@ classDiagram
 
     ILLMProvider <|.. LLMProvider : implements
     ITUIManager <|.. TUIManager : implements
-    IWebSearchPort <|.. JinaSearchAdapter : implements
-    IJiraPort <|.. JiraAdapter : implements
+    IWebSearchProvider <|.. JinaSearchProvider : implements
     INoteToolPort <|.. NoteToolAdapter : implements
     ISessionPort <|.. SessionAdapter : implements
 
@@ -113,8 +101,7 @@ classDiagram
 
     style ILLMProvider fill:#e3f2fd,stroke:#1565c0
     style ITUIManager fill:#e3f2fd,stroke:#1565c0
-    style IWebSearchPort fill:#e3f2fd,stroke:#1565c0
-    style IJiraPort fill:#e3f2fd,stroke:#1565c0
+    style IWebSearchProvider fill:#e3f2fd,stroke:#1565c0
     style INoteToolPort fill:#e3f2fd,stroke:#1565c0
     style ISessionPort fill:#e3f2fd,stroke:#1565c0
     style IConsistencyProtocol fill:#e3f2fd,stroke:#1565c0
@@ -174,7 +161,7 @@ classDiagram
 
 ## 3. Agent Internals — Tool Composition
 
-Every agent is the same `LLMAgentWrapper` primitive. What differs is its `ToolSet` — composed at factory time from configured adapters. Research agents get `websearch + jira + note`; validation agents get `note` only. The LLM provider is the single external dependency all agents share.
+Every agent is the same `LLMAgentWrapper` primitive. What differs is its `ToolSet` — composed at factory time from configured adapters. Research agents get `websearch + note`; validation agents get `note` only. The LLM provider is the single external dependency all agents share.
 
 ```mermaid
 classDiagram
@@ -190,8 +177,7 @@ classDiagram
     }
 
     class ToolSet {
-        +websearch: IWebSearchPort
-        +jira: IJiraPort
+        +websearch: IWebSearchProvider
         +note: INoteToolPort
     }
 
@@ -210,8 +196,7 @@ classDiagram
     LLMAgentWrapper --> ISessionPort : manages
     LLMAgentWrapper --> AgentOutput : produces
 
-    ToolSet --> IWebSearchPort : optional
-    ToolSet --> IJiraPort : optional
+    ToolSet --> IWebSearchProvider : optional
     ToolSet --> INoteToolPort : required
 
     LLMProvider --> LLMConfig : reads
@@ -273,8 +258,7 @@ classDiagram
 |-----------|---------|---------|
 | `ILLMProvider<U,V>` | `stream()`, `message()`, `json()`, `outputFormat()` | LLM interaction; generic over input/output types |
 | `ITUIManager` | `showthinking()`, `clear()`, `truncateLength()`, `output()`, `input()`, `useroutput()` | Terminal UI abstraction |
-| `IWebSearchPort` | `search()`, `parse()` | Web search capability (optional) |
-| `IJiraPort` | `query()` | Jira integration (optional) |
+| `IWebSearchProvider` | `search()`, `parse()` | Web search via Jina API (optional — JINA_API_KEY) |
 | `INoteToolPort` | `save()`, `read()` | Per-agent notebook KV |
 | `ISessionPort` | `init()`, `get()`, `set()`, `delete()` | Session lifecycle |
 | `IConsistencyProtocol` | `participate()`, `submission()`, `evaluation()` | Agent participation contract |
@@ -337,7 +321,5 @@ classDiagram
     style ITerminalPresenter fill:#e3f2fd,stroke:#1565c0
     note for TUIManager "presenter is optional"
 ```
-
-Append to Ports table:
 
 | `ITerminalPresenter` | `render()`, `success()`, `fail()`, `warning()` | Optional terminal styling; swappable for any chalk-like library |

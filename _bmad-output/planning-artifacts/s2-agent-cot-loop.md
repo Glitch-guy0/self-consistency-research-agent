@@ -1,7 +1,7 @@
 # S2 — Agent Internal Chain-of-Thought Loop
 
 **Scope:** Inside a single LLMAgentWrapper instance — the 10-phase research loop per sherlock prompt
-**Actors:** LLMAgentWrapper, ILLMProvider, ToolSet (websearch, jira, note), KVCache (temp session)
+**Actors:** LLMAgentWrapper, ILLMProvider, ToolSet (websearch, note), KVCache (temp session)
 
 ---
 
@@ -9,8 +9,7 @@
 sequenceDiagram
     participant Agent as LLMAgentWrapper
     participant LLM as ILLMProvider
-    participant Search as IWebSearchPort
-    participant Jira as IJiraPort
+    participant Search as IWebSearchProvider
     participant KV as KVCacheTemp
 
     Agent->>Agent: Intent - parse user query
@@ -27,11 +26,6 @@ sequenceDiagram
             Search-->>Agent: markdown results
             Agent->>Search: parse(url)
             Search-->>Agent: page content
-
-        else action jira_query
-            Note over Agent,Jira: Jira Query
-            Agent->>Jira: query(params)
-            Jira-->>Agent: jira data
 
         else action note_save
             Note over Agent,KV: Save Note
@@ -70,13 +64,13 @@ sequenceDiagram
                                    │   Think   │
                                    └────┬──────┘
                                         │
-                              ┌─────────┼──────────┐
-                              │         │          │
-                         ┌────▼──┐ ┌───▼───┐ ┌───▼────┐
-                         │Search │ │Jira   │ │Note    │
-                         └───┬───┘ └───┬───┘ └───┬────┘
-                             │         │          │
-                         ┌───▼─────────▼──────────▼──┐
+                               ┌─────────┐
+                               │         │
+                          ┌────▼──┐ ┌───▼────┐
+                          │Search │ │Note    │
+                          └───┬───┘ └───┬────┘
+                              │         │
+                          ┌───▼─────────▼─────┐
                          │       Analyse             │
                          └───┬─────────┬──────────┬──┘
                              │         │          │
@@ -97,5 +91,4 @@ sequenceDiagram
 | Tool | Research Agent | Validation Agent |
 |------|---------------|------------------|
 | `websearch` | ✅ (if composed) | ❌ |
-| `jira` | ✅ (if composed) | ❌ |
 | `note` | ✅ | ✅ |

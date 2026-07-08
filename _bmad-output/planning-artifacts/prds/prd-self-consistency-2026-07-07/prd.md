@@ -13,7 +13,7 @@ This PRD is for me (Prajwal) as the sole developer and user. It defines the scop
 
 ## 1. Vision
 
-A CLI tool that takes a user query, spawns 3 independent research agents running chain-of-thought, collects their outputs, and passes them through a validation agent that synthesizes a coherent answer using majority-vote reasoning. The entire pipeline runs in the terminal with animated feedback. Built with hexagonal architecture — every external dependency (LLM provider, web search, Jira, session store) is behind a port interface and composed only if configured, so the system degrades gracefully when API keys are missing.
+A CLI tool that takes a user query, spawns 3 independent research agents running chain-of-thought, collects their outputs, and passes them through a validation agent that synthesizes a coherent answer using majority-vote reasoning. The entire pipeline runs in the terminal with animated feedback. Built with hexagonal architecture — every external dependency (LLM provider, web search, session store) is behind a port interface and composed only if configured, so the system degrades gracefully when API keys are missing.
 
 ## 2. Target User
 
@@ -42,7 +42,7 @@ A CLI tool that takes a user query, spawns 3 independent research agents running
 ## 3. Glossary
 
 - **LLM Agent Wrapper** — Single reusable primitive that takes a tool set + system prompt and runs a chain-of-thought loop. Used for both research and validation agents.
-- **Research Agent** — Instance of the LLM Agent Wrapper configured with `{websearch, jira, note}` tools + the sherlock research system prompt. 3 concurrent instances per query.
+- **Research Agent** — Instance of the LLM Agent Wrapper configured with `{websearch, note}` tools + the sherlock research system prompt. 3 concurrent instances per query.
 - **Validation Agent** — Instance of the LLM Agent Wrapper configured with `{note}` tool only + the athena validation system prompt. 1 instance runs after research agents complete.
 - **Notebook** — Per-agent KV storage scoped to that agent instance. Stores intermediate chain-of-thought findings.
 - **Conversation Session** — Persistent orchestrator-owned session storing `{user, assistant}` pairs across query turns.
@@ -54,7 +54,7 @@ A CLI tool that takes a user query, spawns 3 independent research agents running
 
 ### 4.1 Agent Pipeline Orchestration
 
-**Description:** The orchestrator receives a user query from the TUI, composes available adapters (websearch, jira, note) based on environment config, spawns 3 concurrent research agents, collects their outputs, dispatches to the validation agent, and streams the result back. The orchestrator owns a persistent Conversation Session storing `{user, assistant}` pairs. Each spawned agent gets a temporary Agent Session (for its notebook) that is deleted after completion. Realizes UJ-1.
+**Description:** The orchestrator receives a user query from the TUI, composes available adapters (websearch, note) based on environment config, spawns 3 concurrent research agents, collects their outputs, dispatches to the validation agent, and streams the result back. The orchestrator owns a persistent Conversation Session storing `{user, assistant}` pairs. Each spawned agent gets a temporary Agent Session (for its notebook) that is deleted after completion. Realizes UJ-1.
 
 **Functional Requirements:**
 
@@ -68,7 +68,7 @@ The orchestrator receives a user query from `TUI.input()`, appends it to the per
 
 #### FR-2: Concurrent research agent dispatch
 
-The orchestrator spawns 3 LLM Agent Wrapper instances concurrently, each with composed tools (websearch + jira if configured, note always), a temporary Agent Session, and the research system prompt. Each agent gets its own isolated notebook scope within its temp session.
+The orchestrator spawns 3 LLM Agent Wrapper instances concurrently, each with composed tools (websearch if configured, note always), a temporary Agent Session, and the research system prompt. Each agent gets its own isolated notebook scope within its temp session.
 
 **Consequences (testable):**
 - 3 agent instances are dispatched in parallel (Promise.all or equivalent).
@@ -90,7 +90,7 @@ All 3 research outputs are passed to the validation agent (configured with `{not
 
 **Consequences (testable):**
 - Validation agent receives all 3 research outputs as input.
-- Validation agent does NOT have access to websearch or jira tools.
+- Validation agent does NOT have access to websearch tools.
 - Final output is a synthesized answer, not a raw concatenation.
 - Orchestrator appends the final answer to the Conversation Session as `{assistant}` then deletes the validation agent's temp session.
 
@@ -122,7 +122,6 @@ When an optional adapter is unavailable (no API key), the TUI displays a warning
 
 **Consequences (testable):**
 - Missing JINA_API_KEY triggers "websearch disabled, falling back to internal knowledge".
-- Missing JIRA_API_KEY triggers no warning (silent skip).
 
 #### FR-7b: Optional terminal presenter with styled output
 
@@ -161,45 +160,32 @@ Provider supports `stream()` (ReadableStream), `message()` (raw string), and `js
 - `json()` returns parsed U (generic type).
 - `outputFormat(zodSchema)` disables `stream()`.
 
-### 4.4 Web Search Adapter (Jina)
+### 4.4 Web Search Provider (Jina)
 
-**Description:** Optional adapter wrapping the Jina Search API. Provides search (query → markdown) and content parsing (URL → parsed content). Composed only if `JINA_API_KEY` is set. Realizes UJ-2.
+**Description:** Optional `JinaSearchProvider` implementing `IWebSearchProvider`. Provides search (query → markdown) and content parsing (URL → parsed content) via separate Jina API URIs. Constructor accepts optional `apiKey` — falls back to `JINA_API_KEY` env var internally. Realizes UJ-2.
 
 **Functional Requirements:**
 
 #### FR-10: Jina search and parse
 
-Adapter exposes `search(query)` → markdown results and `parse(url)` → parsed page content via the Jina API.
+Provider exposes `search(query)` → markdown results via `https://s.jina.ai/` and `parse(url)` → parsed page content via `https://r.jina.ai/`.
 
 **Consequences (testable):**
 - `search()` hits `https://s.jina.ai/` with the query.
 - `parse()` hits `https://r.jina.ai/` with the URL.
 - Both use the configured API key in the `Authorization` header.
+- Constructor reads `JINA_API_KEY` from env var if no explicit apiKey argument provided.
 
 #### FR-11: Graceful degradation when disabled
 
-When `JINA_API_KEY` is missing, the adapter is not composed. A warning displays via `warn()` and agents fall back to LLM internal knowledge.
+When `JINA_API_KEY` is missing, `JinaSearchProvider` is not composed. A warning displays via `warn()` and agents fall back to LLM internal knowledge.
 
 **Consequences (testable):**
-- No websearch adapter instance when key is missing.
+- No websearch provider instance when key is missing.
 - Warning notification is displayed.
 - Agents continue without error.
 
-### 4.5 Jira Adapter
-
-**Description:** Optional adapter wrapping the Jira REST API. Composed only if `JIRA_API_KEY` is set.
-
-**Functional Requirements:**
-
-#### FR-12: Optional Jira integration
-
-Adapter composed only if `JIRA_API_KEY` is present. When missing, silently excluded (no warning, no error).
-
-**Consequences (testable):**
-- No Jira adapter instance when key is missing.
-- No warning or error shown.
-
-### 4.6 Session & Note Tool
+### 4.5 Session & Note Tool
 
 **Description:** In-memory KV store (JS object) shared across the application. Implements `SessionPort` and `NoteToolPort` interfaces. Session manager handles lifecycle; note tool provides per-agent isolated notebook storage. Swappable for Redis later via the same port interface.
 
@@ -239,7 +225,6 @@ The orchestrator owns one persistent Conversation Session storing `{user, assist
 - CLI query intake with TUI feedback
 - 3 concurrent research agents with chain-of-thought
 - Web search via Jina (optional, degrades gracefully)
-- Jira integration (optional, silent skip)
 - Validation agent with majority-vote synthesis
 - Streaming validation thinking
 - In-memory KV session management
@@ -269,4 +254,4 @@ Success: I use this tool regularly for research queries and find synthesized ans
 - [ASSUMPTION from FR-2] Promise.all is sufficient for concurrency — no worker threads needed.
 - [ASSUMPTION from FR-8] OpenAI SDK client construction is lightweight enough to build per-agent without perf impact.
 - [ASSUMPTION from FR-13] Plain JS object is performant enough for single-user CLI use.
-- [RESOLVED] API keys are provided via `.env` file (`BASE_URL`, `MODEL`, `API_KEY`, `JINA_API_KEY`, `JIRA_API_KEY`) — per existing `.env.example` convention.
+- [RESOLVED] API keys are provided via `.env` file (`BASE_URL`, `MODEL`, `API_KEY`, `JINA_API_KEY`) — per existing `.env.example` convention.
