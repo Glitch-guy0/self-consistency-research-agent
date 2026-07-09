@@ -59,7 +59,7 @@ export class LLMProvider<U = unknown, V = unknown> implements ILLMProvider<U, V>
             }
           }
           controller.close();
-        } catch (err) {
+        } catch (err: unknown) {
           controller.error(err);
         }
       },

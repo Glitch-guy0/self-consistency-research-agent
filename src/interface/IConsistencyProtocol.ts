@@ -22,7 +22,7 @@ import type { ILLMProvider } from "#src/interface/ILLMProvider.ts";
  * }
  * ```
  */
-export interface IConsistencyProtocol {
+export interface IConsistencyProtocol<U = unknown, V = unknown> {
   /**
    * Registers an `ILLMProvider` instance as a participant in the protocol.
    *
@@ -33,19 +33,19 @@ export interface IConsistencyProtocol {
    * protocol.participate(provider);
    * ```
    */
-  participate(provider: ILLMProvider<unknown, unknown>): void;
+  participate(provider: ILLMProvider<U, V>): void;
 
   /**
    * Triggers all registered participants to produce their submissions.
    *
-   * @returns a promise that resolves when all submissions are collected
+   * @returns a promise that resolves with all collected submissions
    *
    * @example
    * ```ts
-   * await protocol.submission();
+   * const results = await protocol.submission();
    * ```
    */
-  submission(): Promise<unknown>;
+  submission(): Promise<U[]>;
 
   /**
    * Evaluates all collected submissions for consistency and returns the
