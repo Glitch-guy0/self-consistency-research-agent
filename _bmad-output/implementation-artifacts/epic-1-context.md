@@ -26,7 +26,7 @@ Establish the entire project scaffold, all hexagonal port interfaces, the shared
 
 ## Technical Decisions
 
-- **Hexagonal architecture**: Port interfaces in `lib/interface/*.interface.ts`, adapters in provider directories, core domain (Orchestrator, AgentFactory, LLMAgentWrapper) depends only on interfaces.
+- **Hexagonal architecture**: Port interfaces in `src/interface/*.ts`, adapters in `src/service/`, core domain (Orchestrator, AgentFactory, LLMAgentWrapper) depends only on interfaces.
 - **KVCache**: Plain JS `Map` or object — single instance shared across the app. Both `NoteToolAdapter` and `SessionAdapter` receive the same cache instance.
 - **Session lifecycle**: Orchestrator owns the Conversation Session. Per query: create N temp Agent Sessions → spawn research agents → on each agent's output, delete its temp session → spawn validation agent with its own temp session → on output appended to Conversation Session, delete validation temp session.
 - **Config model**: `ProviderConfig` type (`{baseUrl, model, apiKey}`) for per-agent LLM provider setup. Config loaded from `.env` via `dotenv` with typed exports and optional-key handling for `JINA_API_KEY`.
@@ -37,8 +37,8 @@ Establish the entire project scaffold, all hexagonal port interfaces, the shared
   - `IConsistencyProtocol` — `participate()`, `submission()`, `evaluation()`
   - `INoteToolPort` — `save(key, value)`, `read(key)`
   - `ISessionPort` — `init(id)`, `get(id)`, `set(id, data)`, `delete(id)`
-- **Conventions**: ESM imports with `.ts` extension, `#lib/*` and `#util/*` import aliases, `import type` for type-only imports, no barrel files, JSDoc on every method.
-- **Folder layout**: `lib/interface/` (interfaces), `lib/types/` (type aliases/constants), `lib/utils/` (library utilities), `util/` (root-level utilities), `lib/providers/` (adapters), `lib/agent/` (agent wrappers), `lib/session/` (session), `lib/tui/` (terminal UI).
+- **Conventions**: ESM imports with `.ts` extension, `#src/*` import aliases, `import type` for type-only imports, no barrel files, JSDoc on every method.
+- **Folder layout**: `src/interface/` (interfaces), `src/types/` (type aliases/constants), `src/utils/` (utilities), `src/service/` (adapters), `src/plugins/` (TUI + presenters), `src/modules/` (application logic).
 - **Dependencies**: `openai`, `zod`, `chalk`, `dotenv` — all runtime; `typescript@6.0.3`, `ts-node`, `@types/node` — dev.
 
 ## Cross-Story Dependencies

@@ -1,4 +1,4 @@
-import type { KVCache } from "#lib/types/kvCache.type.ts";
+import type { KVCache } from "#src/types/kvCache.ts";
 
 /**
  * Shared in-memory key-value cache backed by a plain JS object.
@@ -15,7 +15,7 @@ import type { KVCache } from "#lib/types/kvCache.type.ts";
  *
  * @example
  * ```ts
- * import { kvCache } from "#lib/utils/kvCache.util.ts";
+ * import { kvCache } from "#src/utils/kvCache.ts";
  *
  * kvCache.set("session-A", { notebook: [], session: {} });
  * const data = kvCache.get("session-A");

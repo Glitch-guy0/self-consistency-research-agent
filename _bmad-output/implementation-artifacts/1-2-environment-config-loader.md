@@ -18,10 +18,10 @@ so that API keys and settings are loaded consistently across the application.
 ## Tasks / Subtasks
 
 - [ ] Task 1: Create the config type definition (AC: 1, 4)
-  - [ ] Define `Config` interface in `lib/types/config.type.ts`
+  - [ ] Define `Config` interface in `src/types/config.ts`
   - [ ] Fields: `baseUrl: string`, `model: string`, `apiKey: string`, `jinaApiKey: string | undefined`
 - [ ] Task 2: Implement the config loader (AC: 1, 2, 3)
-  - [ ] Create `loadConfig()` function in `lib/utils/config.util.ts`
+  - [ ] Create `loadConfig()` function in `src/utils/config.ts`
   - [ ] Read `dotenv/config` to populate `process.env`
   - [ ] Extract values: `process.env["BASE_URL"]`, `process.env["MODEL"]`, `process.env["API_KEY"]`, `process.env["JINA_API_KEY"]`
   - [ ] Validate required fields are non-empty strings
@@ -40,10 +40,10 @@ so that API keys and settings are loaded consistently across the application.
 - All env var values are strings; no number parsing or boolean coercion needed
 - `BASE_URL`, `MODEL`, `API_KEY` are required; `JINA_API_KEY` is optional — this mirrors `.env.example` exactly
 - The config module should be a **singleton** (export a frozen `const config: Config` object) — loaded once at startup, read-only thereafter
-- Place the type definition in `lib/types/config.type.ts` using `import type` for type-only imports
-- Place the loader function in `lib/utils/config.util.ts` — follows the `lib/utils/*.util.ts` convention from project-context
-- Existing `lib/types/` and `lib/utils/` directories already exist (created in Story 1.1)
-- No barrel files — import directly: `import { config } from "#lib/utils/config.util.ts"` and `import type { Config } from "#lib/types/config.type.ts"`
+- Place the type definition in `src/types/config.ts` using `import type` for type-only imports
+- Place the loader function in `src/utils/config.ts`
+- Existing `src/types/` and `src/utils/` directories already exist (created in Story 1.1)
+- No barrel files — import directly: `import { config } from "#src/utils/config.ts"` and `import type { Config } from "#src/types/config.ts"`
 - `console.warn()` is the correct channel for missing-var messages (visible but non-fatal), printed to stderr via the `warn` method on `console`
 - Do NOT use Zod for this story — plain TypeScript interface + runtime string checks are sufficient. Zod validation is reserved for Story 2.2 (`outputFormat()`)
 - The config object is consumed by: Story 2.1 (LLMProvider gets `baseUrl`, `model`, `apiKey`), Story 2.3 (JinaSearchProvider reads `jinaApiKey`), and Story 4.3 (Orchestrator checks adapter availability)
@@ -51,8 +51,8 @@ so that API keys and settings are loaded consistently across the application.
 ### Key Files to Create
 
 ```
-lib/types/config.type.ts    — Config interface (NEW)
-lib/utils/config.util.ts    — loadConfig() + singleton export (NEW)
+src/types/config.ts    — Config interface (NEW)
+src/utils/config.ts    — loadConfig() + singleton export (NEW)
 main.ts                     — Wire in config loader (UPDATE)
 ```
 
@@ -71,13 +71,13 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Create `lib/types/config.type.ts` with `Config` interface
-- Create `lib/utils/config.util.ts` with `loadConfig()` and singleton export
+- Create `src/types/config.ts` with `Config` interface
+- Create `src/utils/config.ts` with `loadConfig()` and singleton export
 - Update `main.ts` — replace TODO comment, import and call `loadConfig()`
 - `npm run typecheck` passes with zero errors
 
 ### File List
 
-- lib/types/config.type.ts — new
-- lib/utils/config.util.ts — new
+- src/types/config.ts — new
+- src/utils/config.ts — new
 - main.ts — updated

@@ -17,7 +17,7 @@ warnings: []
 
 **Problem:** The app needs typed, validated configuration from `.env` but currently only has `import "dotenv/config"` in `main.ts` with no structured config object. Every subsequent epic depends on this — LLM providers need `baseUrl`/`model`/`apiKey`, web search needs `jinaApiKey`, and the orchestrator needs to know which adapters are available.
 
-**Approach:** Create a `Config` type in `lib/types/config.type.ts` and a `loadConfig()` singleton in `lib/utils/config.util.ts` that reads from `process.env` (populated by dotenv), validates required fields, warns on missing values, and exports a frozen config object. Wire into `main.ts` by replacing the TODO placeholder.
+**Approach:** Create a `Config` type in `src/types/config.ts` and a `loadConfig()` singleton in `src/utils/config.ts` that reads from `process.env` (populated by dotenv), validates required fields, warns on missing values, and exports a frozen config object. Wire into `main.ts` by replacing the TODO placeholder.
 
 ## Boundaries & Constraints
 
@@ -27,11 +27,11 @@ warnings: []
 - Missing required vars produce `console.warn()` (not throw) — the app continues but dev is warned
 - Config is a frozen singleton, loaded once at module import time
 - Uses plain TypeScript interface + runtime string checks — NOT Zod (reserved for Story 2.2)
-- ESM imports with `.ts` extension via `#lib/*` alias
+- ESM imports with `.ts` extension via `#src/*` alias
 - JSDoc on every exported function/type
 
 **Block If:**
-- `lib/types/` directory does not exist (it does — confirmed)
+- `src/types/` directory does not exist (it does — confirmed)
 
 **Never:**
 - Do not use `require()` or `module.exports`
@@ -53,16 +53,16 @@ warnings: []
 
 ## Code Map
 
-- `lib/types/config.type.ts` -- NEW: `Config` interface with typed fields
-- `lib/utils/config.util.ts` -- NEW: `loadConfig()` function + singleton export
+- `src/types/config.ts` -- NEW: `Config` interface with typed fields
+- `src/utils/config.ts` -- NEW: `loadConfig()` function + singleton export
 - `main.ts` -- UPDATE: replace `// TODO: Story 1.2` with config import and call
 
 ## Tasks & Acceptance
 
 **Execution:**
-- [x] `lib/types/config.type.ts` -- define `Config` interface with `baseUrl: string`, `model: string`, `apiKey: string`, `jinaApiKey: string | undefined`
-- [x] `lib/utils/config.util.ts` -- implement `loadConfig()` that reads `process.env`, validates required fields with `console.warn()` on each missing var, returns a frozen `Readonly<Config>` singleton
-- [x] `main.ts` -- replace `// TODO: Story 1.2` with `import { loadConfig } from "#lib/utils/config.util.ts"` and call `loadConfig()` before the `console.log`
+- [x] `src/types/config.ts` -- define `Config` interface with `baseUrl: string`, `model: string`, `apiKey: string`, `jinaApiKey: string | undefined`
+- [x] `src/utils/config.ts` -- implement `loadConfig()` that reads `process.env`, validates required fields with `console.warn()` on each missing var, returns a frozen `Readonly<Config>` singleton
+- [x] `main.ts` -- replace `// TODO: Story 1.2` with `import { loadConfig } from "#src/utils/config.ts"` and call `loadConfig()` before the `console.log`
 - [x] `tsconfig.json` -- add `allowImportingTsExtensions: true` and `types: ["node"]` (required for `.ts` extension imports and `process` type resolution)
 
 **Acceptance Criteria:**
@@ -90,8 +90,8 @@ warnings: []
 
 **Commands:**
 - `npm run typecheck` -- expected: zero errors
-- `node --experimental-vm-modules node_modules/.bin/ts-node -e "import { config } from './lib/utils/config.util.ts'; console.log(JSON.stringify(config))"` -- expected: prints config object without crashing
+- `node --experimental-vm-modules node_modules/.bin/ts-node -e "import { config } from './src/utils/config.ts'; console.log(JSON.stringify(config))"` -- expected: prints config object without crashing
 
 **Manual checks (if no CLI):**
-- Verify `lib/types/config.type.ts` exports a `Config` interface with the 4 fields
-- Verify `lib/utils/config.util.ts` exports a `config` object that is frozen
+- Verify `src/types/config.ts` exports a `Config` interface with the 4 fields
+- Verify `src/utils/config.ts` exports a `config` object that is frozen

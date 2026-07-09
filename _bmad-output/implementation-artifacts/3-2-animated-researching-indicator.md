@@ -33,7 +33,7 @@ So that I know the system is processing my query.
 ### Key Files
 
 ```
-lib/tui/tuiManager.ts  — Enhanced showthinking() + startDotAnimation() (EXISTING)
+src/plugins/TUIManager.ts  — Enhanced showthinking() + startDotAnimation() (EXISTING)
 ```
 
 ### References
@@ -54,9 +54,9 @@ big-pickle (opencode/big-pickle)
 
 ### File List
 
-- lib/tui/tuiManager.ts — updated (enhanced in Story 3.1, reused here)
+- src/plugins/TUIManager.ts — updated (enhanced in Story 3.1, reused here)
 
 ### Review Findings
 
 - [x] [Review][Decision] Dot animation cycles through 1, 2, 3 dots at 500ms intervals — single-frame animation, no flicker concern since `\r\x1b[K` clears before each write
-- [x] [Review][Patch] `showthinking` with `delay: 0` should NOT append newline — writes inline without `\n` so the animation overwrites the same line [lib/tui/tuiManager.ts:30]
+- [x] [Review][Patch] `showthinking` with `delay: 0` should NOT append newline — writes inline without `\n` so the animation overwrites the same line [src/plugins/TUIManager.ts:30]

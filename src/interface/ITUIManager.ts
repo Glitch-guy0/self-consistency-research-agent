@@ -7,7 +7,7 @@
  *
  * @example
  * ```ts
- * import type { ITUIManager } from "#lib/interface/itui-manager.interface.ts";
+ * import type { ITUIManager } from "#src/interface/ITUIManager.ts";
  *
  * async function example(tui: ITUIManager) {
  *   tui.output("Hello, world!");

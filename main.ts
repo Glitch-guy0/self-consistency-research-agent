@@ -1,9 +1,9 @@
 import "dotenv/config";
-import { config } from "#lib/utils/config.util.ts";
-import { kvCache } from "#lib/utils/kvCache.util.ts";
-import { SessionAdapter } from "#lib/session/sessionAdapter.provider.ts";
-import { TUIManager } from "#lib/tui/tuiManager.ts";
-import { Orchestrator } from "#lib/agent/orchestrator.ts";
+import { config } from "#src/utils/config.ts";
+import { kvCache } from "#src/utils/kvCache.ts";
+import { SessionAdapter } from "#src/service/SessionAdapter.ts";
+import { TUIManager } from "#src/plugins/TUIManager.ts";
+import { Orchestrator } from "#src/modules/Orchestrator.ts";
 
 async function main(): Promise<void> {
   void config;

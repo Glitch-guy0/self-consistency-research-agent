@@ -16,8 +16,8 @@ So that each agent can use its own LLM provider with independent baseUrl, model,
 
 ## Tasks / Subtasks
 
-- [x] Task 1: Update ILLMProvider interface in `lib/interface/llmProvider.interface.ts`
-- [x] Task 2: Create LLMProvider class in `lib/providers/llmProvider.provider.ts`
+- [x] Task 1: Update ILLMProvider interface in `src/interface/ILLMProvider.ts`
+- [x] Task 2: Create LLMProvider class in `src/service/LLMProvider.ts`
 - [x] Task 3: Wire constructor with config fallback (baseUrl, model, apiKey from config)
 - [x] Task 4: Run `npm run typecheck` — zero errors
 
@@ -32,8 +32,8 @@ So that each agent can use its own LLM provider with independent baseUrl, model,
 ### Key Files to Create
 
 ```
-lib/interface/llmProvider.interface.ts    — Updated with practical method signatures
-lib/providers/llmProvider.provider.ts     — LLMProvider class (NEW)
+src/interface/ILLMProvider.ts    — Updated with practical method signatures
+src/service/LLMProvider.ts     — LLMProvider class (NEW)
 ```
 
 ## Dev Agent Record
@@ -44,18 +44,18 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Updated `lib/interface/llmProvider.interface.ts` with practical method signatures
-- Created `lib/providers/llmProvider.provider.ts` with `LLMProvider` class implementing `ILLMProvider`
+- Updated `src/interface/ILLMProvider.ts` with practical method signatures
+- Created `src/service/LLMProvider.ts` with `LLMProvider` class implementing `ILLMProvider`
 - `npm run typecheck` passes with zero errors
 
 ### Review Findings
 
-- [x] [Review][Patch] Unused `ClientOptions` import removed from provider [lib/providers/llmProvider.provider.ts:2]
-- [x] [Review][Patch] JSDoc added with `@example` on every method to match project convention [lib/interface/llmProvider.interface.ts, lib/providers/llmProvider.provider.ts]
+- [x] [Review][Patch] Unused `ClientOptions` import removed from provider [src/service/LLMProvider.ts:2]
+- [x] [Review][Patch] JSDoc added with `@example` on every method to match project convention [src/interface/ILLMProvider.ts, src/service/LLMProvider.ts]
 - [x] [Review][Decision] `outputFormat()` returns `ILLMProvider<U, V>` (interface type) rather than concrete `LLMProvider<U, V>`. This is intentional — consumers depend on the port interface, not the impl.
 - [x] [Review][Decision] Generic type `U` is bound at the class level, so `json()` return type is fixed per instance. Consumers should use `new LLMProvider<MyType>()` or cast at call site. This matches the interface design.
 
 ### File List
 
-- lib/interface/llmProvider.interface.ts — updated
-- lib/providers/llmProvider.provider.ts — new
+- src/interface/ILLMProvider.ts — updated
+- src/service/LLMProvider.ts — new

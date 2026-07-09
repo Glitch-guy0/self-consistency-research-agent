@@ -18,7 +18,7 @@ So that TUIManager can render styled output when Chalk is available.
 ## Tasks / Subtasks
 
 - [ ] Task 1: Create ITerminalPresenter interface (AC: 1)
-  - [ ] Create `lib/interface/iterminal-presenter.interface.ts` with render(), success(), fail(), warning()
+  - [ ] Create `src/interface/ITerminalPresenter.ts` with render(), success(), fail(), warning()
 - [ ] Task 2: Implement ChalkPresenter (AC: 2)
   - [ ] `render()` applies chalk color/bgcolor from opts
   - [ ] `success()` delegates to render with green
@@ -43,10 +43,10 @@ So that TUIManager can render styled output when Chalk is available.
 ### Key Files to Create
 
 ```
-lib/interface/iterminal-presenter.interface.ts   — ITerminalPresenter interface (NEW)
-lib/tui/chalkPresenter.ts                         — ChalkPresenter (NEW)
-lib/tui/plainPresenter.ts                         — PlainPresenter (NEW)
-lib/tui/tuiManager.ts                             — Updated constructor + output/warn delegation (UPDATE)
+src/interface/ITerminalPresenter.ts   — ITerminalPresenter interface (NEW)
+src/plugins/ChalkPresenter.ts                         — ChalkPresenter (NEW)
+src/plugins/PlainPresenter.ts                         — PlainPresenter (NEW)
+src/plugins/TUIManager.ts                             — Updated constructor + output/warn delegation (UPDATE)
 ```
 
 ### References
@@ -61,20 +61,20 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Created `lib/interface/iterminal-presenter.interface.ts` with render(text, opts?), success(), fail(), warning()
-- Created `lib/tui/chalkPresenter.ts` — ChalkPresenter with dynamic color/bgcolor lookup
-- Created `lib/tui/plainPresenter.ts` — PlainPresenter returning text unmodified
-- Updated `lib/tui/tuiManager.ts` — constructor accepts optional presenter; output() and warn() delegate
+- Created `src/interface/ITerminalPresenter.ts` with render(text, opts?), success(), fail(), warning()
+- Created `src/plugins/ChalkPresenter.ts` — ChalkPresenter with dynamic color/bgcolor lookup
+- Created `src/plugins/PlainPresenter.ts` — PlainPresenter returning text unmodified
+- Updated `src/plugins/TUIManager.ts` — constructor accepts optional presenter; output() and warn() delegate
 - `npm run typecheck` passes with zero errors
 
 ### File List
 
-- lib/interface/iterminal-presenter.interface.ts — new
-- lib/tui/chalkPresenter.ts — new
-- lib/tui/plainPresenter.ts — new
-- lib/tui/tuiManager.ts — updated
+- src/interface/ITerminalPresenter.ts — new
+- src/plugins/ChalkPresenter.ts — new
+- src/plugins/PlainPresenter.ts — new
+- src/plugins/TUIManager.ts — updated
 
 ### Review Findings
 
 - [x] [Review][Decision] `render()` signature widened from spec: added `text: string` as first parameter. The spec sketch showed `render(opts: { ... }): void` without text, which would make the method unusable. Added text param and return string to match how presenters work.
-- [x] [Review][Patch] Dynamic chalk property access requires `unknown` cast — chalk's `ChalkInstance` type lacks index signature. Used `(chalk as unknown as Record<string, ChalkFn>)` pattern [lib/tui/chalkPresenter.ts:27]
+- [x] [Review][Patch] Dynamic chalk property access requires `unknown` cast — chalk's `ChalkInstance` type lacks index signature. Used `(chalk as unknown as Record<string, ChalkFn>)` pattern [src/plugins/ChalkPresenter.ts:27]

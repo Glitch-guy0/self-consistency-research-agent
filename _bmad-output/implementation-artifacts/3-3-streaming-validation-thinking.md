@@ -32,7 +32,7 @@ So that I can understand its reasoning process.
 ### Key Files
 
 ```
-lib/tui/tuiManager.ts  — Enhanced showthinking() (EXISTING)
+src/plugins/TUIManager.ts  — Enhanced showthinking() (EXISTING)
 ```
 
 ### References
@@ -53,8 +53,8 @@ big-pickle (opencode/big-pickle)
 
 ### File List
 
-- lib/tui/tuiManager.ts — updated (enhanced in Story 3.1, reused here)
+- src/plugins/TUIManager.ts — updated (enhanced in Story 3.1, reused here)
 
 ### Review Findings
 
-- [x] [Review][Patch] Streaming mode does not accumulate text — each call replaces the previous chunk. This matches the expected behavior: the orchestrator pushes the full accumulated text on each call, so the latest call shows the complete thinking so far [lib/tui/tuiManager.ts:33]
+- [x] [Review][Patch] Streaming mode does not accumulate text — each call replaces the previous chunk. This matches the expected behavior: the orchestrator pushes the full accumulated text on each call, so the latest call shows the complete thinking so far [src/plugins/TUIManager.ts:33]

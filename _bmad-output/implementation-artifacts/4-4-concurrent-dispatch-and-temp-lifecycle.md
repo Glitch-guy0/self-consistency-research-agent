@@ -34,5 +34,5 @@ so that I get diverse perspectives in parallel.
 
 - [x] [Review][Decision] Temp session IDs follow pattern `agent-session-{N}` for traceability — matches the `{N}` index from the registered roster
 - [x] [Review][Decision] `Promise.all` dispatches all agents concurrently — each agent gets `session.init()` called before run and `session.delete()` after, preventing cross-agent state leaks
-- [x] [Review][Patch] Concurrent `session.init()` calls on different session IDs are safe — `SessionAdapter.init()` checks `=== undefined` before overwriting, and IDs are unique per agent [lib/agent/orchestrator.ts:159]
-- [x] [Review][Patch] Research agent output is collected but not persisted to the Conversation Session — raw research outputs are passed only to the validation agent via `JSON.stringify` [lib/agent/orchestrator.ts:179-181]
+- [x] [Review][Patch] Concurrent `session.init()` calls on different session IDs are safe — `SessionAdapter.init()` checks `=== undefined` before overwriting, and IDs are unique per agent [src/modules/Orchestrator.ts:159]
+- [x] [Review][Patch] Research agent output is collected but not persisted to the Conversation Session — raw research outputs are passed only to the validation agent via `JSON.stringify` [src/modules/Orchestrator.ts:179-181]

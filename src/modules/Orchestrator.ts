@@ -1,27 +1,19 @@
-import type { ITUIManager } from "#lib/interface/itui-manager.interface.ts";
-import type { ISessionPort } from "#lib/interface/iSessionPort.interface.ts";
-import type { INoteToolPort } from "#lib/interface/iNoteToolPort.interface.ts";
-import type { KVCache } from "#lib/types/kvCache.type.ts";
-import { composeWebSearch } from "#lib/providers/providerFactory.util.ts";
-import { AgentFactory } from "#lib/agent/agentFactory.ts";
-import type { AgentInstance } from "#lib/agent/agentFactory.ts";
-import { NoteToolAdapter } from "#lib/providers/noteToolAdapter.provider.ts";
+import type { ITUIManager } from "#src/interface/ITUIManager.ts";
+import type { ISessionPort } from "#src/interface/ISessionPort.ts";
+import type { INoteToolPort } from "#src/interface/INoteToolPort.ts";
+import type { KVCache } from "#src/types/kvCache.ts";
+import { composeWebSearch } from "#src/modules/ProviderFactory.ts";
+import { AgentFactory } from "#src/modules/AgentFactory.ts";
+import type { AgentInstance } from "#src/modules/AgentFactory.ts";
+import { NoteToolAdapter } from "#src/service/NoteToolAdapter.ts";
 
 const CONVERSATION_SESSION_ID = "conv-session";
 const VALIDATION_SESSION_ID = "val-session";
 
-/** Conversation session shape stored under `conv-session` in KVCache. */
 interface ConvSession {
   messages: Array<{ user?: string; assistant?: string }>;
 }
 
-/**
- * Default system prompt for research agents.
- *
- * Instructs the LLM to respond with structured JSON containing a `type`
- * field for CoT loop resolution. Research agents have access to web
- * search results via the toolset.
- */
 const RESEARCH_SYSTEM_PROMPT = [
   "You are a research agent in a self-consistency system.",
   "Your task is to research the given query thoroughly.",
@@ -37,13 +29,6 @@ const RESEARCH_SYSTEM_PROMPT = [
   "Continue thinking and researching until ready for final output.",
 ].join("\n");
 
-/**
- * Default system prompt for the validation agent.
- *
- * The validation agent receives all research outputs, analyzes them for
- * agreement, produces confidence scores based on agreement-strength and
- * citation overlap, and outputs a synthesised answer or divergence report.
- */
 const VALIDATION_SYSTEM_PROMPT = [
   "You are a validation agent in a self-consistency system.",
   "You receive multiple research outputs and must analyze them for consistency.",
@@ -64,42 +49,9 @@ const VALIDATION_SYSTEM_PROMPT = [
   "Clearly show which parts have high confidence vs low confidence.",
 ].join("\n");
 
-/**
- * Central coordinator for the self-consistency agent pipeline.
- *
- * The Orchestrator:
- * 1. Receives a user query via `TUI.input()`.
- * 2. Appends `{user: query}` to the persistent Conversation Session.
- * 3. Checks adapter availability via `composeWebSearch()`.
- * 4. Delegates to `AgentFactory` for the research agent roster.
- * 5. Spawns and runs all research agents concurrently (Story 4.4).
- * 6. Dispatches the validation agent (Story 4.5).
- * 7. Appends the validated answer to the Conversation Session.
- * 8. Cleans up all temp sessions.
- *
- * @example
- * ```ts
- * const orchestrator = new Orchestrator(tui, session, kvCache);
- * await orchestrator.run();
- * ```
- */
 export class Orchestrator {
   private readonly agentFactory: AgentFactory;
 
-  /**
-   * @param tui — Terminal UI manager for user interaction.
-   * @param session — Session port for conversation/agent session storage.
-   * @param kvCache — Shared in-memory KV cache for notebook/session data.
-   * @param agentFactory — Optional pre-configured AgentFactory (created
-   *                       internally if omitted).
-   * @param agentCount — Number of research agents to spawn (default 3).
-   *
-   * @example
-   * ```ts
-   * const orch = new Orchestrator(tui, session, kvCache, undefined, 3);
-   * await orch.run();
-   * ```
-   */
   constructor(
     private readonly tui: ITUIManager,
     private readonly session: ISessionPort,
@@ -110,14 +62,6 @@ export class Orchestrator {
     this.agentFactory = agentFactory ?? new AgentFactory();
   }
 
-  /**
-   * Runs the full self-consistency pipeline for a single query cycle.
-   *
-   * @example
-   * ```ts
-   * await orchestrator.run();
-   * ```
-   */
   async run(): Promise<void> {
     this.tui.output("Self-Consistency Research Agent");
     const query = await this.tui.input("Enter your research query: ");
@@ -195,9 +139,6 @@ export class Orchestrator {
     this.session.delete(VALIDATION_SESSION_ID);
   }
 
-  /**
-   * Retrieves or creates the persistent conversation session.
-   */
   private getOrCreateConversation(): ConvSession {
     this.session.init(CONVERSATION_SESSION_ID);
     const existing = this.session.get(CONVERSATION_SESSION_ID) as ConvSession | undefined;
@@ -209,9 +150,6 @@ export class Orchestrator {
     return session;
   }
 
-  /**
-   * Formats conversation history as a human-readable string for the LLM.
-   */
   private formatConversationHistory(conv: ConvSession): string {
     return conv.messages
       .map((m) => {

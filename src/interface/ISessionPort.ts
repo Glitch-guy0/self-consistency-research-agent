@@ -7,7 +7,7 @@
  *
  * @example
  * ```ts
- * import type { ISessionPort } from "#lib/interface/iSessionPort.interface.ts";
+ * import type { ISessionPort } from "#src/interface/ISessionPort.ts";
  *
  * function manage(session: ISessionPort): void {
  *   session.init("conv-1");

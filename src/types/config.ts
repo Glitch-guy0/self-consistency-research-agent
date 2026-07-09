@@ -7,7 +7,7 @@
  *
  * @example
  * ```ts
- * import { config } from "#lib/utils/config.util.ts";
+ * import { config } from "#src/utils/config.ts";
  * // config.baseUrl // "https://api.openai.com/v1"
  * // config.jinaApiKey // "sk-..." or undefined
  * ```

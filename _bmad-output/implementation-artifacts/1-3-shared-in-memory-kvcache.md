@@ -22,10 +22,10 @@ so that session and notebook data can be stored and retrieved from a single stor
 ## Tasks / Subtasks
 
 - [x] Task 1: Define the KVCache interface & types (AC: 1, 2, 3)
-  - [x] Create `lib/types/kvCache.type.ts` with `KVCache` interface (set, get, delete, clear)
+  - [x] Create `src/types/kvCache.ts` with `KVCache` interface (set, get, delete, clear)
   - [x] Keys are `string`, values are `unknown` (callers cast at usage site)
 - [x] Task 2: Implement KVCache (AC: 1, 2, 3, 4)
-  - [x] Create `lib/utils/kvCache.util.ts` exporting class `KVCacheImpl` (implements `KVCache` interface from types)
+  - [x] Create `src/utils/kvCache.ts` exporting class `KVCacheImpl` (implements `KVCache` interface from types)
   - [x] Backed by a plain `Record<string, unknown>` — single shared JS object
   - [x] `set(key, value)` stores value, `get(key)` returns value or undefined, `delete(key)` removes key, `clear()` wipes all entries
   - [x] No cloning/defensive copy — values stored and returned by reference (consumers NoteToolAdapter and SessionAdapter need reference semantics for shared object scopes)
@@ -37,9 +37,9 @@ so that session and notebook data can be stored and retrieved from a single stor
 
 - [x] [Review][Decision] Undefined value ambiguity — `set("key", undefined)` makes `get("key")` return undefined, indistinguishable from missing key. Accepted as-is — callers should not store undefined values.
 
-- [x] [Review][Patch] Singleton not frozen — applied `Object.freeze()` + `Readonly<KVCache>` type [lib/utils/kvCache.util.ts:48]
-- [x] [Review][Patch] `get()` returns inherited Object.prototype properties / prototype pollution — switched store to `Object.create(null)` [lib/utils/kvCache.util.ts:26]
-- [x] [Review][Patch] Missing JSDoc with `@example` on individual methods — added to all methods [lib/types/kvCache.type.ts, lib/utils/kvCache.util.ts]
+- [x] [Review][Patch] Singleton not frozen — applied `Object.freeze()` + `Readonly<KVCache>` type [src/utils/kvCache.ts:48]
+- [x] [Review][Patch] `get()` returns inherited Object.prototype properties / prototype pollution — switched store to `Object.create(null)` [src/utils/kvCache.ts:26]
+- [x] [Review][Patch] Missing JSDoc with `@example` on individual methods — added to all methods [src/types/kvCache.ts, src/utils/kvCache.ts]
 
 ## Dev Notes
 
@@ -53,13 +53,13 @@ so that session and notebook data can be stored and retrieved from a single stor
 ### Testing Guidance
 
 - No test framework is configured in this project — `npm test` returns a placeholder. KVCache is simple enough that manual verification via `npm run typecheck` suffices. Tests will be added when the project gets its test framework in a future story.
-- If you want to add a quick smoke test, create `lib/utils/kvCache.test.ts` with a basic node script (not required for ACs).
+- If you want to add a quick smoke test, create `src/utils/kvCache.test.ts` with a basic node script (not required for ACs).
 
 ### Key Files to Create
 
 ```
-lib/types/kvCache.type.ts    — KVCache interface (NEW)
-lib/utils/kvCache.util.ts    — KVCache implementation + singleton (NEW)
+src/types/kvCache.ts    — KVCache interface (NEW)
+src/utils/kvCache.ts    — KVCache implementation + singleton (NEW)
 ```
 
 ### References
@@ -71,20 +71,20 @@ lib/utils/kvCache.util.ts    — KVCache implementation + singleton (NEW)
 
 ### Previous Story Intelligence
 
-**Story 1.1** established the project scaffold: ESM package.json, strict tsconfig, directory structure, import aliases (`#lib/*`, `#util/*`). `.gitignore` excludes `dist/`.
+**Story 1.1** established the project scaffold: ESM package.json, strict tsconfig, directory structure, import alias (`#src/*`). `.gitignore` excludes `dist/`.
 
 **Story 1.2** created:
-- `lib/types/config.type.ts` — `Config` interface with `baseUrl`, `model`, `apiKey`, `jinaApiKey`
-- `lib/utils/config.util.ts` — `loadConfig()` + frozen singleton `config`
+- `src/types/config.ts` — `Config` interface with `baseUrl`, `model`, `apiKey`, `jinaApiKey`
+- `src/utils/config.ts` — `loadConfig()` + frozen singleton `config`
 - Updated `main.ts` with config import
 - Fixed `tsconfig.json`: added `allowImportingTsExtensions`, `types: ["node"]`
 
 **Key Patterns from Stories 1.1/1.2:**
-- Types in `lib/types/*.type.ts`, implementations in `lib/utils/*.util.ts`
+- Types in `src/types/*.ts`, implementations in `src/utils/*.ts`
 - Export frozen singleton for shared state (e.g., `config`)
 - JSDoc with `@example` blocks on every public API
 - `import type` for type-only imports, direct imports from specific module (no barrel files)
-- `#lib/*` import alias with `.ts` extension: `import { ... } from "#lib/utils/foo.util.ts"`
+- `#src/*` import alias with `.ts` extension: `import { ... } from "#src/utils/foo.ts"`
 
 ## Dev Agent Record
 
@@ -96,12 +96,12 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Created `lib/types/kvCache.type.ts` with `KVCache` interface (set, get, delete, clear)
-- Created `lib/utils/kvCache.util.ts` with `KVCacheImpl` class backed by `Record<string, unknown>`
+- Created `src/types/kvCache.ts` with `KVCache` interface (set, get, delete, clear)
+- Created `src/utils/kvCache.ts` with `KVCacheImpl` class backed by `Record<string, unknown>`
 - Exported frozen singleton `kvCache` for cross-application sharing
 - `npm run typecheck` passes with zero errors
 
 ### File List
 
-- lib/types/kvCache.type.ts — new (KVCache interface)
-- lib/utils/kvCache.util.ts — new (KVCacheImpl + singleton)
+- src/types/kvCache.ts — new (KVCache interface)
+- src/utils/kvCache.ts — new (KVCacheImpl + singleton)

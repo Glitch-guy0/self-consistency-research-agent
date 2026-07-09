@@ -37,5 +37,5 @@ so that the agent roster is built declaratively before dispatch.
 - [x] [Review][Decision] `spawnAll` returns `AgentInstance[]` (wrapper + sessionId) so orchestrator can track and clean up temp sessions
 - [x] [Review][Decision] `ResearchAgentConfig` reflects what is composed by spawnAll, not a direct parameter — defined as an exported interface for type documentation
 - [x] [Review][Decision] `createValidationAgent` creates its own `LLMProvider` with defaults (no config overrides) — matches AC6 "no provider — uses default"
-- [x] [Review][Patch] `spawnAll` is marked `async` but contains no `await` calls — synchronous LLMProvider constructor is non-blocking, so this is acceptable for future extensibility [lib/agent/agentFactory.ts:153]
-- [x] [Review][Patch] `registerResearchAgent` stores config by reference — configs are simple value objects so mutation-after-registration risk is negligible [lib/agent/agentFactory.ts:128]
+- [x] [Review][Patch] `spawnAll` is marked `async` but contains no `await` calls — synchronous LLMProvider constructor is non-blocking, so this is acceptable for future extensibility [src/modules/AgentFactory.ts:153]
+- [x] [Review][Patch] `registerResearchAgent` stores config by reference — configs are simple value objects so mutation-after-registration risk is negligible [src/modules/AgentFactory.ts:128]

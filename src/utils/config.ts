@@ -1,4 +1,4 @@
-import type { Config } from "#lib/types/config.type.ts";
+import type { Config } from "#src/types/config.ts";
 
 /**
  * Loads configuration from environment variables and returns a frozen,
@@ -13,7 +13,7 @@ import type { Config } from "#lib/types/config.type.ts";
  *
  * @example
  * ```ts
- * import { config } from "#lib/utils/config.util.ts";
+ * import { config } from "#src/utils/config.ts";
  * console.log(config.baseUrl); // string, possibly empty
  * ```
  */

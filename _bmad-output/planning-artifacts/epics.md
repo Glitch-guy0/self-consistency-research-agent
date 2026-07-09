@@ -107,7 +107,7 @@ So that I have a consistent foundation to build on.
 **When** I run `npm install`
 **Then** package.json exists with `"type": "module"` and all core dependencies (openai, zod, chalk, dotenv)
 **And** tsconfig.json exists with strict mode, ESNext target, bundler moduleResolution
-**And** directories `src/lib/interface/`, `src/lib/providers/`, `src/lib/tui/`, `src/lib/agent/`, `src/lib/session/`, `src/util/` exist
+**And** directories `src/interface/`, `src/service/`, `src/plugins/`, `src/modules/`, `src/types/`, `src/utils/` exist
 **And** .env.example contains placeholders for BASE_URL, MODEL, API_KEY, JINA_API_KEY
 
 ### Story 1.2: Environment & Config Loader
@@ -176,11 +176,11 @@ So that all hexagonal boundaries are established before adapters are implemented
 **Acceptance Criteria:**
 
 **Given** the interfaces directory
-**When** I inspect `illm-provider.interface.ts`
+**When** I inspect `ILLMProvider.ts`
 **Then** it declares stream(), message(), json(), outputFormat() methods with generics
-**And** `itui-manager.interface.ts` declares showthinking(), clear(), output(), input(), warn()
-**And** `iweb-search-provider.interface.ts` declares search() and parse()
-**And** `iconsistency-protocol.interface.ts` declares participate(), submission(), evaluation()
+**And** `ITUIManager.ts` declares showthinking(), clear(), output(), input(), warn()
+**And** `IWebSearchProvider.ts` declares search() and parse()
+**And** `IConsistencyProtocol.ts` declares participate(), submission(), evaluation()
 **And** all interfaces use `import type` for type-only imports
 
 ### Epic 2: LLM Provider & Web Search

@@ -21,9 +21,9 @@ so that the orchestrator can manage Conversation Sessions and temp Agent Session
 ## Tasks / Subtasks
 
 - [x] Task 1: Define `ISessionPort` interface (AC: 1, 2, 3)
-  - [x] Create `lib/interface/iSessionPort.interface.ts` with `init(id)`, `get(id)`, `set(id, data)`, `delete(id)` methods
+  - [x] Create `src/interface/ISessionPort.ts` with `init(id)`, `get(id)`, `set(id, data)`, `delete(id)` methods
 - [x] Task 2: Implement `SessionAdapter` (AC: 1, 2, 3)
-  - [x] Create `lib/session/sessionAdapter.provider.ts` implementing ISessionPort
+  - [x] Create `src/service/SessionAdapter.ts` implementing ISessionPort
   - [x] `init(id)` only sets data if the key does not already exist (no overwrite per AC3)
   - [x] `set(id, data)` overwrites existing data unconditionally
   - [x] `get(id)` returns the stored session data or undefined
@@ -45,8 +45,8 @@ so that the orchestrator can manage Conversation Sessions and temp Agent Session
 ### Key Files to Create
 
 ```
-lib/interface/iSessionPort.interface.ts      — ISessionPort interface (NEW)
-lib/session/sessionAdapter.provider.ts       — SessionAdapter implementation (NEW)
+src/interface/ISessionPort.ts      — ISessionPort interface (NEW)
+src/service/SessionAdapter.ts       — SessionAdapter implementation (NEW)
 ```
 
 ### References
@@ -57,8 +57,8 @@ lib/session/sessionAdapter.provider.ts       — SessionAdapter implementation (
 ### Previous Story Intelligence
 
 **Story 1.4** created:
-- `lib/interface/iNoteToolPort.interface.ts` — INoteToolPort interface
-- `lib/providers/noteToolAdapter.provider.ts` — NoteToolAdapter implementation
+- `src/interface/INoteToolPort.ts` — INoteToolPort interface
+- `src/service/NoteToolAdapter.ts` — NoteToolAdapter implementation
 
 ## Dev Agent Record
 
@@ -68,12 +68,12 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Created `lib/interface/iSessionPort.interface.ts` with `ISessionPort` interface (init, get, set, delete)
-- Created `lib/session/sessionAdapter.provider.ts` with `SessionAdapter` class implementing ISessionPort
+- Created `src/interface/ISessionPort.ts` with `ISessionPort` interface (init, get, set, delete)
+- Created `src/service/SessionAdapter.ts` with `SessionAdapter` class implementing ISessionPort
 - `init` uses strict `undefined` check to avoid overwriting existing sessions (AC3)
 - `npm run typecheck` passes with zero errors
 
 ### File List
 
-- lib/interface/iSessionPort.interface.ts — new (ISessionPort interface)
-- lib/session/sessionAdapter.provider.ts — new (SessionAdapter implementation)
+- src/interface/ISessionPort.ts — new (ISessionPort interface)
+- src/service/SessionAdapter.ts — new (SessionAdapter implementation)

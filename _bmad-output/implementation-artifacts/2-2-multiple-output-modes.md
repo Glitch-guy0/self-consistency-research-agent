@@ -34,7 +34,7 @@ So that agents and orchestrator can choose the appropriate output format.
 ### Key Files
 
 ```
-lib/providers/llmProvider.provider.ts     — LLMProvider class (same as 2.1)
+src/service/LLMProvider.ts     — LLMProvider class (same as 2.1)
 ```
 
 ## Dev Agent Record
@@ -51,10 +51,10 @@ big-pickle (opencode/big-pickle)
 
 ### Review Findings
 
-- [x] [Review][Patch] `stream()` guards against `outputFormat()` by checking `this.schema` before creating the stream [lib/providers/llmProvider.provider.ts:53]
+- [x] [Review][Patch] `stream()` guards against `outputFormat()` by checking `this.schema` before creating the stream [src/service/LLMProvider.ts:53]
 - [x] [Review][Decision] `outputFormat()` leaves the schema in place for subsequent `json()` calls. It is never auto-cleared. Callers that need to switch modes should create a new provider instance.
 - [x] [Review][Decision] No `text.format` is passed to the OpenAI API for structured output — the Zod validation is applied client-side only. A future enhancement could pass the schema JSON to the API for server-side enforcement.
 
 ### File List
 
-- lib/providers/llmProvider.provider.ts — updated (same file as 2.1)
+- src/service/LLMProvider.ts — updated (same file as 2.1)

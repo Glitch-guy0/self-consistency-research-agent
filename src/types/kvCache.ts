@@ -12,7 +12,7 @@
  *
  * @example
  * ```ts
- * import { kvCache } from "#lib/utils/kvCache.util.ts";
+ * import { kvCache } from "#src/utils/kvCache.ts";
  *
  * kvCache.set("session-1", { notebook: [] });
  * const session = kvCache.get("session-1");

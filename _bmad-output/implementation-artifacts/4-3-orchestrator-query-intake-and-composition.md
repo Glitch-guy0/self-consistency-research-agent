@@ -37,5 +37,5 @@ so that the pipeline has a central coordinator.
 - [x] [Review][Decision] Orchestrator owns the Conversation Session lifecycle; messages stored as `Array<{user?, assistant?}>` under `conv-session` key
 - [x] [Review][Decision] `getOrCreateConversation()` uses `session.init()` (no-overwrite) before checking for existing messages — handles both first-run and repeat-run scenarios correctly
 - [x] [Review][Decision] `formatConversationHistory()` maps `{user}` and `{assistant}` entries to `User: / Assistant:` prefixed lines for LLM consumption
-- [x] [Review][Patch] `composeWebSearch()` is called before agent registration — warning appears before any processing delay, matching FR-7 [lib/agent/orchestrator.ts:134]
-- [x] [Review][Patch] `registerResearchAgent({})` uses empty config (all defaults) — all agents share the same LLM config; cross-model diversity requires explicit config overrides [lib/agent/orchestrator.ts:140]
+- [x] [Review][Patch] `composeWebSearch()` is called before agent registration — warning appears before any processing delay, matching FR-7 [src/modules/Orchestrator.ts:134]
+- [x] [Review][Patch] `registerResearchAgent({})` uses empty config (all defaults) — all agents share the same LLM config; cross-model diversity requires explicit config overrides [src/modules/Orchestrator.ts:140]

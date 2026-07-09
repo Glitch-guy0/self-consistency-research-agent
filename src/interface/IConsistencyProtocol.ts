@@ -1,4 +1,4 @@
-import type { ILLMProvider } from "#lib/interface/illm-provider.interface.ts";
+import type { ILLMProvider } from "#src/interface/ILLMProvider.ts";
 
 /**
  * Port interface for the self-consistency protocol.
@@ -9,8 +9,8 @@ import type { ILLMProvider } from "#lib/interface/illm-provider.interface.ts";
  *
  * @example
  * ```ts
- * import type { IConsistencyProtocol } from "#lib/interface/iconsistency-protocol.interface.ts";
- * import type { ILLMProvider } from "#lib/interface/illm-provider.interface.ts";
+ * import type { IConsistencyProtocol } from "#src/interface/IConsistencyProtocol.ts";
+ * import type { ILLMProvider } from "#src/interface/ILLMProvider.ts";
  *
  * async function run(protocol: IConsistencyProtocol, providers: ILLMProvider[]) {
  *   for (const provider of providers) {

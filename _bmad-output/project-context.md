@@ -27,7 +27,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 - **ESM only** — use `import`/`export` syntax; never use `require()` or `module.exports`
 - **Strict TypeScript** — avoid `any`, handle `null`/`undefined` explicitly, use strict equality (`===`)
-- **Import aliases** — use `#lib/*` and `#util/*` for internal imports; always include the `.ts` extension
+- **Import aliases** — use `#src/*` for internal imports; always include the `.ts` extension
 - **Type-only imports** — use `import type` when importing only types to avoid runtime side-effects
 - **No barrel files** — import directly from the specific module path
 - **Top-level await** — available (ESM); prefer async patterns over callbacks
@@ -56,25 +56,30 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ### Architecture & Design Rules
 
-- **Always code to interfaces** — every public capability must be defined in `lib/interface/*.interface.ts` before implementation. Classes implement interfaces, not the other way around.
+- **Always code to interfaces** — every public capability must be defined in `src/interface/*.ts` before implementation. Classes implement interfaces, not the other way around.
 - **Plan for scale** — design abstractions that support multiple strategies (e.g., multiple LLM providers, evaluation methods, TUI renderers). Use generics and dependency injection rather than hard-coding implementations.
 
 ### Folder Structure Conventions
 
 ```
-lib/
-  interface/      # All interfaces (*.interface.ts)
-  types/          # Shared type definitions & type aliases
-  utils/          # Utility/helper functions (*.util.ts)
-util/               # Root-level utilities (alias: #util/*)
+src/
+├── interface/   # Port contracts (ILLMProvider.ts, ITUIManager.ts, etc.)
+├── types/       # Shared type definitions (kvCache.ts, config.ts)
+├── utils/       # Pure helpers (config.ts, kvCache.ts, llmProvider.ts)
+├── service/     # Adapter implementations (LLMProvider.ts, JinaSearchProvider.ts, etc.)
+├── plugins/     # TUI + presenters (ChalkPresenter.ts, PlainPresenter.ts, TUIManager.ts)
+└── modules/     # Application logic (AgentFactory.ts, AgentWrapper.ts, Orchestrator.ts, ProviderFactory.ts)
 ```
 
-- **Interfaces** always go in `lib/interface/` — suffix with `.interface.ts`
-- **Utilities** go in either `lib/utils/` (library-scoped) or `util/` (root-level, shared), suffixed with `.util.ts`
-- **Types** (type aliases, enums, constants) go in `lib/types/`
-- **Import via aliases** — use `#lib/interface/foo.interface.ts`, `#lib/utils/bar.util.ts`, `#util/baz.util.ts`
+- **Interfaces** go in `src/interface/` — PascalCase with no suffix (e.g., `ILLMProvider.ts`)
+- **Utilities** go in `src/utils/` — camelCase with no suffix (e.g., `config.ts`, `kvCache.ts`)
+- **Types** go in `src/types/` — camelCase with no suffix (e.g., `config.ts`, `kvCache.ts`)
+- **Services** go in `src/service/` — PascalCase class name (e.g., `LLMProvider.ts`, `SessionAdapter.ts`)
+- **Plugins** go in `src/plugins/` — PascalCase class name (e.g., `ChalkPresenter.ts`, `TUIManager.ts`)
+- **Modules** go in `src/modules/` — PascalCase class name (e.g., `Orchestrator.ts`, `AgentFactory.ts`)
+- **Import via aliases** — use `#src/*` paths (e.g., `#src/interface/ILLMProvider.ts`, `#src/utils/config.ts`)
 - **No barrel files** — always import from the specific module path
-- **Keep depth shallow** — prefer flat subdirectories over deep nesting for discoverability
+- **Dropped suffixes** — `.interface.ts`, `.provider.ts`, `.util.ts`, `.type.ts` — all redundant
 
 ## Critical Implementation Rules
 

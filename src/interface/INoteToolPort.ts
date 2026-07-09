@@ -8,7 +8,7 @@
  *
  * @example
  * ```ts
- * import type { INoteToolPort } from "#lib/interface/iNoteToolPort.interface.ts";
+ * import type { INoteToolPort } from "#src/interface/INoteToolPort.ts";
  *
  * function run(noteTool: INoteToolPort): void {
  *   noteTool.save("step-1", { thought: "..." });

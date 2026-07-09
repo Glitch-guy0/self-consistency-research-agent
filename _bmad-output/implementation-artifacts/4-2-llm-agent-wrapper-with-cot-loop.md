@@ -38,6 +38,6 @@ so that both research and validation agents use the same primitive with differen
 - [x] [Review][Decision] StepResponse uses zod schema (`stepSchema`) for parsing LLM JSON output — types include "thinking", "research", "output"
 - [x] [Review][Decision] Web search results saved to notebook under `search-{stepCount}` key for visibility in subsequent CoT iterations
 - [x] [Review][Decision] `run()` resets `stepCount = 0` on each call, making the wrapper safe for repeated use
-- [x] [Review][Patch] `provider.json()` instructions param packs systemPrompt + convHistory + notebookContext contiguously — if all three are large, the context window may be exceeded, but this is an inherent LLM concern, not a code defect [lib/agent/llmAgentWrapper.ts:148-150]
-- [x] [Review][Patch] Infinite-loop edge case: if the LLM never returns `type === "output"`, the CoT loop runs forever — acceptable as a design contract with the LLM prompt [lib/agent/llmAgentWrapper.ts:119]
-- [x] [Review][Patch] Search error caught generically via `catch (err: unknown)` and stored as `error: String(err)` — preserves the error without crashing the agent [lib/agent/llmAgentWrapper.ts:162-166]
+- [x] [Review][Patch] `provider.json()` instructions param packs systemPrompt + convHistory + notebookContext contiguously — if all three are large, the context window may be exceeded, but this is an inherent LLM concern, not a code defect [src/modules/AgentWrapper.ts:148-150]
+- [x] [Review][Patch] Infinite-loop edge case: if the LLM never returns `type === "output"`, the CoT loop runs forever — acceptable as a design contract with the LLM prompt [src/modules/AgentWrapper.ts:119]
+- [x] [Review][Patch] Search error caught generically via `catch (err: unknown)` and stored as `error: String(err)` — preserves the error without crashing the agent [src/modules/AgentWrapper.ts:162-166]

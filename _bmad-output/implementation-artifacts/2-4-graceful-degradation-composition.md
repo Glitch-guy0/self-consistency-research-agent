@@ -16,7 +16,7 @@ So that the system degrades gracefully when web search is unavailable.
 
 ## Tasks / Subtasks
 
-- [x] Task 1: Create `createProviderFactory()` in `lib/providers/providerFactory.util.ts`
+- [x] Task 1: Create `createProviderFactory()` in `src/modules/ProviderFactory.ts`
 - [x] Task 2: Implement `composeWebSearch()` that returns `{ provider, isAvailable, warning }`
 - [x] Task 3: Run `npm run typecheck` — zero errors
 
@@ -30,7 +30,7 @@ So that the system degrades gracefully when web search is unavailable.
 ### Key Files to Create
 
 ```
-lib/providers/providerFactory.util.ts  — Provider factory (NEW)
+src/modules/ProviderFactory.ts  — Provider factory (NEW)
 ```
 
 ## Dev Agent Record
@@ -41,16 +41,16 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Created `lib/providers/providerFactory.util.ts` with `composeWebSearch()` helper
+- Created `src/modules/ProviderFactory.ts` with `composeWebSearch()` helper
 - `npm run typecheck` passes with zero errors
 
 ### Review Findings
 
 - [x] [Review][Decision] Uses `config.jinaApiKey` (frozen singleton) rather than `process.env` directly. Matches the project convention of centralising env access through the config object.
-- [x] [Review][Patch] The warning message is descriptive and actionable, telling the user both what happened and how to fix it. [lib/providers/providerFactory.util.ts:59]
+- [x] [Review][Patch] The warning message is descriptive and actionable, telling the user both what happened and how to fix it. [src/modules/ProviderFactory.ts:59]
 - [x] [Review][Decision] The `composeWebSearch()` function returns a structured result rather than throwing. This lets the orchestrator decide how to handle unavailability (warn vs. silent fallback).
 - [x] [Review][Patch] JSDoc with `@example` on the function and the result interface matches project convention.
 
 ### File List
 
-- lib/providers/providerFactory.util.ts — new
+- src/modules/ProviderFactory.ts — new

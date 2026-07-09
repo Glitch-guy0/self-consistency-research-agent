@@ -21,9 +21,9 @@ so that agents have isolated per-instance notebook storage.
 ## Tasks / Subtasks
 
 - [x] Task 1: Define `INoteToolPort` interface (AC: 1)
-  - [x] Create `lib/interface/iNoteToolPort.interface.ts` with `save(key, value)` and `read(key)` methods
+  - [x] Create `src/interface/INoteToolPort.ts` with `save(key, value)` and `read(key)` methods
 - [x] Task 2: Implement `NoteToolAdapter` (AC: 1, 2, 3)
-  - [x] Create `lib/providers/noteToolAdapter.provider.ts` implementing INoteToolPort
+  - [x] Create `src/service/NoteToolAdapter.ts` implementing INoteToolPort
   - [x] Constructor takes `KVCache` instance and `sessionPrefix` string
   - [x] Keys are scoped as `${sessionPrefix}:${key}` to isolate agent notebooks
 - [x] Task 3: Verify typecheck (AC: all)
@@ -31,7 +31,7 @@ so that agents have isolated per-instance notebook storage.
 
 ### Review Findings
 
-- [x] [Review][Decision] Interface naming — used `iNoteToolPort.interface.ts` following `i` prefix convention established in Story 1.6 requirements. The interface uses a single generic approach rather than multiple type params since the notebook tool is simple key-value storage.
+- [x] [Review][Decision] Interface naming — used `INoteToolPort.ts`.
 - [x] [Review][Patch] Key scoping — using `${sessionPrefix}:${key}` format ensures full isolation across agent sessions. Without the prefix, AC2 would fail since different sessions would collide.
 
 ## Dev Notes
@@ -43,8 +43,8 @@ so that agents have isolated per-instance notebook storage.
 ### Key Files to Create
 
 ```
-lib/interface/iNoteToolPort.interface.ts    — INoteToolPort interface (NEW)
-lib/providers/noteToolAdapter.provider.ts   — NoteToolAdapter implementation (NEW)
+src/interface/INoteToolPort.ts    — INoteToolPort interface (NEW)
+src/service/NoteToolAdapter.ts   — NoteToolAdapter implementation (NEW)
 ```
 
 ### References
@@ -55,14 +55,14 @@ lib/providers/noteToolAdapter.provider.ts   — NoteToolAdapter implementation (
 ### Previous Story Intelligence
 
 **Story 1.3** created:
-- `lib/types/kvCache.type.ts` — KVCache interface
-- `lib/utils/kvCache.util.ts` — KVCacheImpl + frozen singleton `kvCache`
+- `src/types/kvCache.ts` — KVCache interface
+- `src/utils/kvCache.ts` — KVCacheImpl + frozen singleton `kvCache`
 
 **Key Patterns:**
-- Types in `lib/types/*.type.ts`, interfaces in `lib/interface/*.interface.ts`, implementations in `lib/providers/*.provider.ts` or `lib/utils/*.util.ts`
+- Types in `src/types/*.ts`, interfaces in `src/interface/*.ts`, implementations in `src/service/*.ts` or `src/utils/*.ts`
 - JSDoc with `@example` blocks on every public API
 - `import type` for type-only imports
-- `#lib/*` import alias with `.ts` extension
+- `#src/*` import alias with `.ts` extension
 
 ## Dev Agent Record
 
@@ -72,12 +72,12 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Created `lib/interface/iNoteToolPort.interface.ts` with `INoteToolPort` interface (save, read)
-- Created `lib/providers/noteToolAdapter.provider.ts` with `NoteToolAdapter` class implementing INoteToolPort
+- Created `src/interface/INoteToolPort.ts` with `INoteToolPort` interface (save, read)
+- Created `src/service/NoteToolAdapter.ts` with `NoteToolAdapter` class implementing INoteToolPort
 - Key scoping via `${sessionPrefix}:${key}` ensures per-agent isolation
 - `npm run typecheck` passes with zero errors
 
 ### File List
 
-- lib/interface/iNoteToolPort.interface.ts — new (INoteToolPort interface)
-- lib/providers/noteToolAdapter.provider.ts — new (NoteToolAdapter implementation)
+- src/interface/INoteToolPort.ts — new (INoteToolPort interface)
+- src/service/NoteToolAdapter.ts — new (NoteToolAdapter implementation)

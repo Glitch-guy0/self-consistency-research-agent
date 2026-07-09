@@ -16,7 +16,7 @@ So that I have a consistent foundation to build on.
 
 1. **AC1: package.json** — exists with `"type": "module"` and all core dependencies (openai, zod, chalk, dotenv)
 2. **AC2: tsconfig.json** — exists with strict mode, ESNext target, bundler moduleResolution
-3. **AC3: Directory structure** — directories `lib/interface/`, `lib/providers/`, `lib/tui/`, `lib/agent/`, `lib/session/`, `lib/utils/`, `util/` exist
+3. **AC3: Directory structure** — directories `src/interface/`, `src/service/`, `src/plugins/`, `src/modules/`, `src/types/`, `src/utils/` exist
 4. **AC4: .env.example** — contains placeholders for BASE_URL, MODEL, API_KEY, JINA_API_KEY
 5. **AC5: .gitignore** — excludes node_modules and dist/
 6. **AC6: Build verification** — `npm run typecheck` passes with no errors
@@ -30,11 +30,11 @@ So that I have a consistent foundation to build on.
   - [x] Confirm .env.example has all 4 vars
   - [x] Confirm .gitignore covers dist/ (currently only node_modules)
 - [x] Task 2: Create missing directories (AC: 3)
-  - [x] `lib/providers/`
-  - [x] `lib/tui/`
-  - [x] `lib/agent/`
-  - [x] `lib/session/`
-  - [x] `lib/utils/`
+  - [x] `src/service/`
+  - [x] `src/plugins/`
+  - [x] `src/modules/`
+  - [x] `src/types/`
+  - [x] `src/utils/`
   - [x] Add `.gitkeep` to empty dirs so they commit
 - [x] Task 3: Create entry point — `main.ts` (AC: 6, 7)
   - [x] Should bootstrap config and orchestrator
@@ -45,29 +45,26 @@ So that I have a consistent foundation to build on.
 
 ## Dev Notes
 
-- The project ALREADY has: package.json, tsconfig.json, .env.example, lib/, util/, node_modules/ (deps installed), and a stub main.ts.
-- Directories that ALREADY exist: `lib/interface/`, `lib/types/`, `util/`.
-- Directories that NEED CREATING: `lib/providers/`, `lib/tui/`, `lib/agent/`, `lib/session/`, `lib/utils/`.
-- The existing `lib/interface/` has 3 stub files (llmProvider.interface.ts, tui.interface.ts, consistency.interface.ts) — these are incomplete draft comments. **DO NOT rewrite them in this story**; Story 1.6 owns the proper port interfaces. Only ensure they don't break typechecking.
-- The existing `util/llmProvider.util.ts` is a stub — **DO NOT implement it**; Story 2.1 owns the LLMProvider implementation.
+- The project ALREADY has: package.json, tsconfig.json, .env.example, src/, node_modules/ (deps installed), and a stub main.ts.
+- Directories that ALREADY exist: `src/interface/`, `src/types/`, `src/utils/`.
+- Directories that NEED CREATING: `src/service/`, `src/plugins/`, `src/modules/`.
+- The existing `src/interface/` has 3 stub files (ILLMProvider.ts, ITUIManager.ts, IConsistencyProtocol.ts) — these are incomplete draft comments. **DO NOT rewrite them in this story**; Story 1.6 owns the proper port interfaces. Only ensure they don't break typechecking.
+- The existing `src/utils/llmProvider.ts` is a stub — **DO NOT implement it**; Story 2.1 owns the LLMProvider implementation.
 - The existing `main.ts` imports OpenAI with a broken reference (missing `baseURL` definition). It must be fixed minimally to compile.
 - `.gitignore` must be updated to exclude `dist/` (currently only has `node_modules`).
-- Import aliases `#lib/*` and `#util/*` are already configured in package.json `"imports"`.
-- The project uses root-level `lib/` NOT `src/lib/` — do NOT create a `src/` directory.
+- Import alias `#src/*` is already configured in package.json `"imports"`.
 
 ### Project Structure Notes
 
 ```
 self-consistency/
-├── lib/
-│   ├── interface/    # All port interfaces (*.interface.ts) — exists, stubs present
-│   ├── types/        # Shared types (*.type.ts) — exists, empty
-│   ├── providers/    # NEEDS CREATION — adapter implementations
-│   ├── tui/          # NEEDS CREATION — TUI & presenter implementations
-│   ├── agent/        # NEEDS CREATION — agent wrapper & factory
-│   ├── session/      # NEEDS CREATION — session manager
-│   └── utils/        # NEEDS CREATION — library-scoped utilities
-├── util/             # Root-level shared utilities (alias: #util/*) — exists
+├── src/
+│   ├── interface/    # Port contracts (ILLMProvider.ts, ITUIManager.ts, etc.) — exists, stubs present
+│   ├── types/        # Shared type definitions (kvCache.ts, config.ts) — exists, empty
+│   ├── utils/        # Pure helpers (config.ts, kvCache.ts, llmProvider.ts) — exists, empty
+│   ├── service/      # NEEDS CREATION — adapter implementations (LLMProvider.ts, etc.)
+│   ├── plugins/      # NEEDS CREATION — TUI & presenter implementations
+│   └── modules/      # NEEDS CREATION — application orchestration (AgentFactory.ts, etc.)
 ├── main.ts           # Entry point (exists, needs fix)
 ├── package.json      # OK
 ├── tsconfig.json     # OK
@@ -90,9 +87,9 @@ big-pickle (opencode/big-pickle)
 ### Completion Notes List
 
 - Existing scaffold audit: package.json ✓ (ESM, deps), tsconfig.json ✓ (strict, ESNext), .env.example ✓ (4 vars)
-- Missing dirs identified: lib/providers/, lib/tui/, lib/agent/, lib/session/, lib/utils/
+- Missing dirs identified: src/service/, src/plugins/, src/modules/
 - .gitignore needs `dist/` added
-- Stub files in lib/interface/ and util/ should NOT be implemented — later stories own them
+- Stub files in src/interface/ should NOT be implemented — later stories own them
 - Fixed main.ts — replaced broken OpenAI stub with minimal bootstrap (dotenv + async main)
 - Updated .gitignore to exclude dist/
 - Created 5 missing directories with .gitkeep files
@@ -110,14 +107,14 @@ big-pickle (opencode/big-pickle)
 
 ### Deferred (Pre-existing)
 
-- [x] [Review][Defer] `constructor()` in `ILLMProvider` interface is invalid TypeScript — pre-existing stub owned by Story 1.6. [lib/interface/llmProvider.interface.ts:5]
+- [x] [Review][Defer] `constructor()` in `ILLMProvider` interface is invalid TypeScript — pre-existing stub owned by Story 1.6. [src/interface/ILLMProvider.ts:5]
 
 ### File List
 
 - .gitignore — added `dist` entry
 - main.ts — rewritten with proper bootstrap
-- lib/providers/.gitkeep — created
-- lib/tui/.gitkeep — created
-- lib/agent/.gitkeep — created
-- lib/session/.gitkeep — created
-- lib/utils/.gitkeep — created
+- src/service/.gitkeep — created
+- src/plugins/.gitkeep — created
+- src/modules/.gitkeep — created
+- src/types/.gitkeep — created
+- src/utils/.gitkeep — created

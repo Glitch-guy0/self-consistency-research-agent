@@ -17,8 +17,8 @@ So that research agents can gather external information.
 
 ## Tasks / Subtasks
 
-- [x] Task 1: Create `IWebSearchProvider` interface in `lib/interface/iweb-search-provider.interface.ts`
-- [x] Task 2: Create `JinaSearchProvider` class in `lib/providers/jinaSearchProvider.provider.ts`
+- [x] Task 1: Create `IWebSearchProvider` interface in `src/interface/IWebSearchProvider.ts`
+- [x] Task 2: Create `JinaSearchProvider` class in `src/service/JinaSearchProvider.ts`
 - [x] Task 3: Implement `search(query)` — fetch from `https://s.jina.ai/` with Authorization header
 - [x] Task 4: Implement `parse(url)` — fetch from `https://r.jina.ai/` with Authorization header
 - [x] Task 5: Wire constructor fallback to config.jinaApiKey or process.env.JINA_API_KEY
@@ -36,8 +36,8 @@ So that research agents can gather external information.
 ### Key Files to Create
 
 ```
-lib/interface/iweb-search-provider.interface.ts  — IWebSearchProvider interface (NEW)
-lib/providers/jinaSearchProvider.provider.ts      — JinaSearchProvider class (NEW)
+src/interface/IWebSearchProvider.ts  — IWebSearchProvider interface (NEW)
+src/service/JinaSearchProvider.ts      — JinaSearchProvider class (NEW)
 ```
 
 ## Dev Agent Record
@@ -55,11 +55,11 @@ big-pickle (opencode/big-pickle)
 ### Review Findings
 
 - [x] [Review][Decision] Uses GET requests with query/url in the URL path (`encodeURIComponent` encoded) rather than POST. This matches the standard Jina API pattern.
-- [x] [Review][Patch] `Accept: text/markdown` header added to inform Jina of desired response format [lib/providers/jinaSearchProvider.provider.ts:85]
+- [x] [Review][Patch] `Accept: text/markdown` header added to inform Jina of desired response format [src/service/JinaSearchProvider.ts:85]
 - [x] [Review][Decision] API key fallback order: constructor arg → config.jinaApiKey → undefined. When undefined, requests are sent without auth header, which will result in a server error. The orchestrator (Story 2.4) is responsible for checking availability before composition.
 - [x] [Review][Patch] JSDoc with `@example` on every method matches project convention.
 
 ### File List
 
-- lib/interface/iweb-search-provider.interface.ts — new
-- lib/providers/jinaSearchProvider.provider.ts — new
+- src/interface/IWebSearchProvider.ts — new
+- src/service/JinaSearchProvider.ts — new

@@ -30,7 +30,7 @@ So that I understand why certain capabilities are disabled.
 ### Key Files
 
 ```
-lib/tui/tuiManager.ts  — warn() method (EXISTING)
+src/plugins/TUIManager.ts  — warn() method (EXISTING)
 ```
 
 ### References
@@ -51,7 +51,7 @@ big-pickle (opencode/big-pickle)
 
 ### File List
 
-- lib/tui/tuiManager.ts — updated (warn() implemented in Story 3.1, reused here)
+- src/plugins/TUIManager.ts — updated (warn() implemented in Story 3.1, reused here)
 
 ### Review Findings
 

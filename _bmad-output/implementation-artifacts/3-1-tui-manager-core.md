@@ -18,7 +18,7 @@ So that the orchestrator can communicate with the user via the terminal.
 ## Tasks / Subtasks
 
 - [ ] Task 1: Create ITUIManager interface (AC: 4)
-  - [ ] Create `lib/interface/itui-manager.interface.ts` with `showthinking()`, `clear()`, `output()`, `input()`, `warn()`
+  - [ ] Create `src/interface/ITUIManager.ts` with `showthinking()`, `clear()`, `output()`, `input()`, `warn()`
 - [ ] Task 2: Implement TUIManager (AC: 1, 2, 3, 4)
   - [ ] `output(text)` writes to stdout
   - [ ] `input(placeholder)` uses readline to prompt and return user input
@@ -39,8 +39,8 @@ So that the orchestrator can communicate with the user via the terminal.
 ### Key Files to Create
 
 ```
-lib/interface/itui-manager.interface.ts    — ITUIManager interface (NEW)
-lib/tui/tuiManager.ts                      — TUIManager implementation (NEW)
+src/interface/ITUIManager.ts    — ITUIManager interface (NEW)
+src/plugins/TUIManager.ts                      — TUIManager implementation (NEW)
 ```
 
 ### References
@@ -55,17 +55,17 @@ big-pickle (opencode/big-pickle)
 
 ### Completion Notes List
 
-- Created `lib/interface/itui-manager.interface.ts` with ITUIManager interface
-- Created `lib/tui/tuiManager.ts` with TUIManager class implementing output(), input(), clear(), showthinking(), warn()
+- Created `src/interface/ITUIManager.ts` with ITUIManager interface
+- Created `src/plugins/TUIManager.ts` with TUIManager class implementing output(), input(), clear(), showthinking(), warn()
 - `npm run typecheck` passes with zero errors
 
 ### File List
 
-- lib/interface/itui-manager.interface.ts — new
-- lib/tui/tuiManager.ts — new
+- src/interface/ITUIManager.ts — new
+- src/plugins/TUIManager.ts — new
 
 ### Review Findings
 
 - [x] [Review][Decision] `render()` in ITerminalPresenter takes both `text` and styling opts (not just opts), returns `string` — deviated from spec sketch because the sketch omitted the text parameter, making it unusable. Added `text` param to `render()`.
-- [x] [Review][Patch] `showthinking` default mode (no delay specified) fell through to `output()` — changed to write inline with `\n` suffix via stdout [lib/tui/tuiManager.ts:38]
-- [x] [Review][Patch] Missing newline in `output()` after clearing thinking — added `\n` to output write [lib/tui/tuiManager.ts:32]
+- [x] [Review][Patch] `showthinking` default mode (no delay specified) fell through to `output()` — changed to write inline with `\n` suffix via stdout [src/plugins/TUIManager.ts:38]
+- [x] [Review][Patch] Missing newline in `output()` after clearing thinking — added `\n` to output write [src/plugins/TUIManager.ts:32]
