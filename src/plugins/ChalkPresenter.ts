@@ -8,7 +8,7 @@ export class ChalkPresenter implements ITerminalPresenter {
     let result: string = text;
 
     if (opts?.color) {
-      const colorFn = (chalk as unknown as Record<string, ChalkFn>)[opts.color];
+      const colorFn = (chalk as never)[opts.color] as ChalkFn | undefined;
       if (colorFn) {
         result = colorFn(result);
       }
@@ -16,7 +16,7 @@ export class ChalkPresenter implements ITerminalPresenter {
 
     if (opts?.bgcolor) {
       const bgKey = "bg" + opts.bgcolor.charAt(0).toUpperCase() + opts.bgcolor.slice(1);
-      const bgFn = (chalk as unknown as Record<string, ChalkFn>)[bgKey];
+      const bgFn = (chalk as never)[bgKey] as ChalkFn | undefined;
       if (bgFn) {
         result = bgFn(result);
       }

@@ -21,6 +21,8 @@ const stepSchema = z.object({
 
 type StepResponse = z.infer<typeof stepSchema>;
 
+const MAX_STEPS = 30;
+
 export class LLMAgentWrapper {
   private stepCount = 0;
 
@@ -33,7 +35,7 @@ export class LLMAgentWrapper {
   async run(query: string, convHistory?: string): Promise<AgentOutput> {
     this.stepCount = 0;
 
-    while (true) {
+    while (this.stepCount < MAX_STEPS) {
       this.stepCount++;
       const stepResult = await this.step(query, convHistory);
 
@@ -46,6 +48,8 @@ export class LLMAgentWrapper {
         content: stepResult.content,
       });
     }
+
+    return { type: "output", content: "Max steps reached. Returning best available result." };
   }
 
   private async step(query: string, convHistory?: string): Promise<StepResponse> {

@@ -64,11 +64,16 @@ export class Orchestrator {
 
   async run(): Promise<void> {
     this.tui.output("Self-Consistency Research Agent");
-    const query = await this.tui.input("Enter your research query: ");
+    let query = await this.tui.input("Enter your research query: ");
 
     if (!query || query.trim() === "") {
       this.tui.warn("Empty query received. Exiting.");
       return;
+    }
+
+    if (query.length > 500) {
+      this.tui.warn(`Query truncated to 500 characters (was ${query.length}).`);
+      query = query.slice(0, 500);
     }
 
     const convSession = this.getOrCreateConversation();

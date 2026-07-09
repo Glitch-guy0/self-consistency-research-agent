@@ -71,6 +71,7 @@ export class LLMProvider<U = unknown, V = unknown> implements ILLMProvider<U, V>
       model: this.model,
       input,
       instructions,
+      ...(this.schema ? { text: { format: { type: "json_object" as const } } } : {}),
     });
 
     const raw = response.output_text;
