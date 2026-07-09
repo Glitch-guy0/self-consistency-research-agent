@@ -22,6 +22,7 @@ export interface ValidationAgentConfig {
   tools: ToolSet;
   systemPrompt: string;
   sessionId: string;
+  provider?: ILLMProvider;
 }
 
 export interface AgentInstance {
@@ -63,7 +64,7 @@ export class AgentFactory {
   }
 
   createValidationAgent(config: ValidationAgentConfig): LLMAgentWrapper {
-    const provider = new LLMProvider();
+    const provider = config.provider ?? new LLMProvider();
     return new LLMAgentWrapper(config.tools, config.systemPrompt, provider);
   }
 }

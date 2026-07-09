@@ -6,6 +6,7 @@ import { composeWebSearch } from "#src/modules/ProviderFactory.ts";
 import { AgentFactory } from "#src/modules/AgentFactory.ts";
 import type { AgentInstance } from "#src/modules/AgentFactory.ts";
 import type { AgentOutput } from "#src/modules/AgentWrapper.ts";
+import { LLMProvider } from "#src/service/LLMProvider.ts";
 import { NoteToolAdapter } from "#src/service/NoteToolAdapter.ts";
 
 const CONVERSATION_SESSION_ID = "conv-session";
@@ -73,7 +74,7 @@ export class Orchestrator {
     }
 
     if (query.length > 500) {
-      this.tui.warn(`Query truncated to 500 characters (was ${query.length}).`);
+      this.tui.warn("500 chars max, please ask one question at a time.");
       query = query.slice(0, 500);
     }
 
@@ -86,9 +87,15 @@ export class Orchestrator {
       this.tui.warn(webSearchComposition.warning);
     }
 
-    for (let i = 0; i < this.agentCount; i++) {
-      this.agentFactory.registerResearchAgent({});
-    }
+    this.agentFactory.registerResearchAgent({
+      model: 'qwen/qwen3-1.7b'
+    });
+    this.agentFactory.registerResearchAgent({
+      model: 'qwen/qwen3-1.7b'
+    });
+    this.agentFactory.registerResearchAgent({
+      model: 'qwen/qwen3-1.7b'
+    });
 
     this.tui.showthinking("researching", { delay: 0, showall: true });
 
@@ -129,15 +136,17 @@ export class Orchestrator {
 
     this.tui.clear();
 
-    this.tui.showthinking("Validating research outputs...", { delay: 0, showall: true });
+    this.tui.showthinking("Validating research outputs", { delay: 0, showall: true });
 
     const validationNoteTool = new NoteToolAdapter(this.kvCache, VALIDATION_SESSION_ID);
     this.session.init(VALIDATION_SESSION_ID);
 
+    const validationProvider = new LLMProvider();
     const validationAgent = this.agentFactory.createValidationAgent({
       tools: { note: validationNoteTool },
       systemPrompt: VALIDATION_SYSTEM_PROMPT,
       sessionId: VALIDATION_SESSION_ID,
+      provider: validationProvider,
     });
 
     const researchData = JSON.stringify(
@@ -155,6 +164,9 @@ export class Orchestrator {
 
     const updatedConv = this.session.get(CONVERSATION_SESSION_ID) as ConvSession | undefined;
     if (updatedConv) {
+      for (const result of researchResults) {
+        updatedConv.messages.push({ assistant: result.content });
+      }
       updatedConv.messages.push({ assistant: validationResult.content });
       this.session.set(CONVERSATION_SESSION_ID, updatedConv);
     }

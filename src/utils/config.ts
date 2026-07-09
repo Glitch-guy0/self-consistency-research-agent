@@ -18,19 +18,18 @@ import type { Config } from "#src/types/config.ts";
  * ```
  */
 export function loadConfig(): Readonly<Config> {
-  const requiredVars = ["BASE_URL", "MODEL", "API_KEY"] as const;
-
-  for (const key of requiredVars) {
-    const value = process.env[key];
-    if (!value || value.trim() === "") {
-      console.warn(`Missing required env var: ${key}`);
-    }
+  const apiKey = (process.env["API_KEY"] ?? "").trim();
+  if (!apiKey) {
+    throw new Error("Missing required env var: API_KEY. Set it in your .env file.");
   }
 
+  const baseUrl = (process.env["BASE_URL"] ?? "https://api.openai.com/v1").trim();
+  const model = (process.env["MODEL"] ?? "gpt-4o-mini").trim();
+
   const config: Config = {
-    baseUrl: (process.env["BASE_URL"] ?? "").trim(),
-    model: (process.env["MODEL"] ?? "").trim(),
-    apiKey: (process.env["API_KEY"] ?? "").trim(),
+    baseUrl,
+    model,
+    apiKey,
     jinaApiKey: process.env["JINA_API_KEY"]?.trim() || undefined,
   };
 

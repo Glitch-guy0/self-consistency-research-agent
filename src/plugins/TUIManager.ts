@@ -14,19 +14,20 @@ export class TUIManager implements ITUIManager {
     this.stopThinking();
 
     if (opts?.delay === 0) {
-      this.startDotAnimation(text);
+      this.startDotAnimation(this.presenter ? this.presenter.render(text, { color: "cyan" }) : text);
     } else if (opts?.delay === null) {
       this.clearLine();
-      process.stdout.write(text);
+      process.stdout.write(this.presenter ? this.presenter.render(text, { color: "cyan" }) : text);
     } else {
       this.clearLine();
-      process.stdout.write(text + "\n");
+      process.stdout.write(this.presenter ? this.presenter.render(text, { color: "cyan" }) : text);
+      process.stdout.write("\n");
     }
   }
 
   write(chunk: string): void {
     this.stopThinking();
-    process.stdout.write(chunk);
+    process.stdout.write(this.presenter ? this.presenter.render(chunk) : chunk);
   }
 
   clear(): void {
