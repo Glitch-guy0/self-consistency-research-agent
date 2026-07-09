@@ -2,6 +2,7 @@
 title: 'Environment & Config Loader'
 type: 'feature'
 created: '2026-07-08'
+final_revision: '11855b46969cbb9a34da983f22414f26776b22fe'
 baseline_revision: 'c09bc677812d61b4b5b184a7aee5cb037655e78c'
 status: 'done'
 review_loop_iteration: 0

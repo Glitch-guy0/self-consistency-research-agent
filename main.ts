@@ -1,11 +1,18 @@
 import "dotenv/config";
 import { config } from "#lib/utils/config.util.ts";
+import { kvCache } from "#lib/utils/kvCache.util.ts";
+import { SessionAdapter } from "#lib/session/sessionAdapter.provider.ts";
+import { TUIManager } from "#lib/tui/tuiManager.ts";
+import { Orchestrator } from "#lib/agent/orchestrator.ts";
 
 async function main(): Promise<void> {
-  // config is loaded eagerly on import — warnings fire here if vars are missing
   void config;
-  // TODO: Story 4.3 — instantiates Orchestrator and runs the query pipeline
-  console.log("Self-Consistency Research Agent");
+
+  const tui = new TUIManager();
+  const session = new SessionAdapter(kvCache);
+  const orchestrator = new Orchestrator(tui, session, kvCache);
+
+  await orchestrator.run();
 }
 
 void main().catch((err: unknown) => {

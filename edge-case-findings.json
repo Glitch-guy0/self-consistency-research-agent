@@ -1,0 +1,34 @@
+[
+  {
+    "location": "lib/utils/config.util.ts:4-10",
+    "trigger_condition": "required env var missing — warns but does not halt, proceeds with empty string",
+    "guard_snippet": "if (!value) throw new Error(`Required env var ${key} not set`);",
+    "potential_consequence": "downstream receives empty baseUrl/model/apiKey — silent misconfiguration",
+    "severity": "high",
+    "triage": "intent_gap"
+  },
+  {
+    "location": "lib/utils/config.util.ts:12-14",
+    "trigger_condition": "whitespace-only env var value passes through ?? \"\" without trimming",
+    "guard_snippet": "baseUrl: (process.env[\"BASE_URL\"] ?? \"\").trim(),",
+    "potential_consequence": "whitespace string used as baseUrl/model/apiKey — opaque failures",
+    "severity": "medium",
+    "triage": "bad_spec"
+  },
+  {
+    "location": "lib/utils/config.util.ts:15",
+    "trigger_condition": "JINA_API_KEY whitespace-only — truthy, so || undefined does not catch it",
+    "guard_snippet": "jinaApiKey: process.env[\"JINA_API_KEY\"]?.trim() || undefined,",
+    "potential_consequence": "whitespace sent as API key — auth fails with inscrutable error",
+    "severity": "medium",
+    "triage": "bad_spec"
+  },
+  {
+    "location": "lib/utils/config.util.ts:18 + main.ts:5",
+    "trigger_condition": "loadConfig() runs on module init AND again explicitly in main() body",
+    "guard_snippet": "remove explicit loadConfig() call from main; import { config } instead",
+    "potential_consequence": "duplicate warnings; redundant frozen object allocation each run",
+    "severity": "low",
+    "triage": "patch"
+  }
+]

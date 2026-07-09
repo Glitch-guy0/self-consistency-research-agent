@@ -1,5 +1,5 @@
-# generated: 2026-07-08
-# last_updated: 2026-07-08
+# generated: 2026-07-09
+# last_updated: 2026-07-09
 # project: self-consistency
 # project_key: NOKEY
 # tracking_system: file-system
@@ -12,59 +12,74 @@
 #   - in-progress: Epic actively being worked on
 #   - done: All stories in epic completed
 #
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
 # Story Status:
 #   - backlog: Story only exists in epic file
 #   - ready-for-dev: Story file created in stories folder
 #   - in-progress: Developer actively working on implementation
-#   - review: Ready for code review
+#   - review: Ready for code review (via Dev's code-review workflow)
 #   - done: Story completed
 #
 # Retrospective Status:
 #   - optional: Can be completed but not required
 #   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
-generated: 2026-07-08
-last_updated: 2026-07-08
+generated: 2026-07-09
+last_updated: 2026-07-09T12:00:00Z
 project: self-consistency
 project_key: NOKEY
 tracking_system: file-system
 story_location: /Users/prajwal/Documents/learning/self-consistency/_bmad-output/implementation-artifacts
 
-# Last update: created story 1-2-environment-config-loader
-
 development_status:
   # Epic 1: Foundation & Core Infrastructure
-  epic-1: in-progress
+  epic-1: done
   1-1-project-scaffold: done
-  1-2-environment-config-loader: ready-for-dev
-  1-3-shared-in-memory-kvcache: backlog
-  1-4-notetool-port-interface-and-notetool-adapter: backlog
-  1-5-session-port-interface-and-session-adapter: backlog
-  1-6-core-port-interfaces: backlog
+  1-2-environment-config-loader: done
+  1-3-shared-in-memory-kvcache: done
+  1-4-notetool-port-interface-and-notetool-adapter: done
+  1-5-session-port-interface-and-session-adapter: done
+  1-6-core-port-interfaces: done
   epic-1-retrospective: optional
 
   # Epic 2: LLM Provider & Web Search
-  epic-2: backlog
-  2-1-llm-provider-implementation: backlog
-  2-2-multiple-output-modes: backlog
-  2-3-jina-search-provider: backlog
-  2-4-graceful-degradation-composition: backlog
+  epic-2: done
+  2-1-llm-provider-implementation: done
+  2-2-multiple-output-modes: done
+  2-3-jina-search-provider: done
+  2-4-graceful-degradation-composition: done
   epic-2-retrospective: optional
 
   # Epic 3: Terminal UI & Presentation
-  epic-3: backlog
-  3-1-tui-manager-core: backlog
-  3-2-animated-researching-indicator: backlog
-  3-3-streaming-validation-thinking: backlog
-  3-4-warning-notifications: backlog
-  3-5-i-terminal-presenter-and-implementations: backlog
+  epic-3: done
+  3-1-tui-manager-core: done
+  3-2-animated-researching-indicator: done
+  3-3-streaming-validation-thinking: done
+  3-4-warning-notifications: done
+  3-5-i-terminal-presenter-and-implementations: done
   epic-3-retrospective: optional
 
   # Epic 4: Agent Pipeline & Orchestration
-  epic-4: backlog
-  4-1-agent-factory-with-two-phase-lifecycle: backlog
-  4-2-llm-agent-wrapper-with-cot-loop: backlog
-  4-3-orchestrator-query-intake-and-composition: backlog
-  4-4-concurrent-dispatch-and-temp-lifecycle: backlog
-  4-5-validation-agent-with-confidence-scoring: backlog
+  epic-4: done
+  4-1-agent-factory-with-two-phase-lifecycle: done
+  4-2-llm-agent-wrapper-with-cot-loop: done
+  4-3-orchestrator-query-intake-and-composition: done
+  4-4-concurrent-dispatch-and-temp-lifecycle: done
+  4-5-validation-agent-with-confidence-scoring: done
   epic-4-retrospective: optional
