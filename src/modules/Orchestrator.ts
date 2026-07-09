@@ -90,7 +90,7 @@ export class Orchestrator {
       this.agentFactory.registerResearchAgent({});
     }
 
-    this.tui.showthinking("researching...", { timeoutMs: 0, showall: true });
+    this.tui.showthinking("researching", { delay: 0, showall: true });
 
     const createNoteTool = (sessionId: string): INoteToolPort => {
       return new NoteToolAdapter(this.kvCache, sessionId);
@@ -129,7 +129,7 @@ export class Orchestrator {
 
     this.tui.clear();
 
-    this.tui.showthinking("Validating research outputs...", { timeoutMs: 0, showall: true });
+    this.tui.showthinking("Validating research outputs...", { delay: 0, showall: true });
 
     const validationNoteTool = new NoteToolAdapter(this.kvCache, VALIDATION_SESSION_ID);
     this.session.init(VALIDATION_SESSION_ID);
@@ -144,7 +144,12 @@ export class Orchestrator {
       researchResults.map((r, i) => ({ agent: i + 1, content: r.content })),
     );
 
-    const validationResult = await validationAgent.run(researchData, convHistory);
+    const validationResult = await validationAgent.run(researchData, convHistory, {
+      onThinking: (content: string) => {
+        this.tui.clear();
+        this.tui.output(`[Validator thinking]: ${content}`);
+      },
+    });
 
     this.tui.clear();
 
@@ -154,7 +159,12 @@ export class Orchestrator {
       this.session.set(CONVERSATION_SESSION_ID, updatedConv);
     }
 
-    this.tui.output(validationResult.content);
+    const content = validationResult.content;
+    for (let i = 0; i < content.length; i++) {
+      this.tui.write(content[i]);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    this.tui.output("");
 
     this.session.delete(VALIDATION_SESSION_ID);
   }

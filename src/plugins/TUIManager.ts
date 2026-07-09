@@ -24,6 +24,11 @@ export class TUIManager implements ITUIManager {
     }
   }
 
+  write(chunk: string): void {
+    this.stopThinking();
+    process.stdout.write(chunk);
+  }
+
   clear(): void {
     this.stopThinking();
     this.clearLine();

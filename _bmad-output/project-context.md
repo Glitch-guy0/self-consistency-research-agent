@@ -65,6 +65,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 - **Always code to interfaces** — every public capability must be defined in `src/interface/*.ts` before implementation. Classes implement interfaces, not the other way around.
 - **Plan for scale** — design abstractions that support multiple strategies (e.g., multiple LLM providers, evaluation methods, TUI renderers). Use generics and dependency injection rather than hard-coding implementations.
+- **Inject dependencies via constructor; never instantiate inside the class** — if a class needs an object via composition (e.g., `ITUIManager`, `INoteToolPort`, `ILLMProvider`), the dependency must be accepted as a constructor parameter. Never construct dependencies internally with `new` or ad-hoc factory calls — this creates invisible coupling that is untraceable to human readers and impossible to mock or swap.
 - **Generics over `unknown`** — when designing an abstraction where the caller knows the concrete type, parameterise it with generics. For example:
   ```ts
   // ✅ Good: caller-provided types flow through

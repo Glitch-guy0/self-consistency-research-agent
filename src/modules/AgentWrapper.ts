@@ -13,6 +13,10 @@ export interface AgentOutput {
   content: string;
 }
 
+export interface AgentCallbacks {
+  onThinking?: (content: string) => void;
+}
+
 const stepSchema = z.object({
   type: z.enum(["thinking", "research", "output"]),
   content: z.string(),
@@ -32,12 +36,16 @@ export class LLMAgentWrapper {
     private readonly provider: ILLMProvider,
   ) {}
 
-  async run(query: string, convHistory?: string): Promise<AgentOutput> {
+  async run(query: string, convHistory?: string, callbacks?: AgentCallbacks): Promise<AgentOutput> {
     this.stepCount = 0;
 
     while (this.stepCount < MAX_STEPS) {
       this.stepCount++;
       const stepResult = await this.step(query, convHistory);
+
+      if (stepResult.type === "thinking") {
+        callbacks?.onThinking?.(stepResult.content);
+      }
 
       if (stepResult.type === "output") {
         return { type: "output", content: stepResult.content };
