@@ -58,7 +58,19 @@ export class LLMAgentWrapper {
       + (convHistory ? `\n\nConversation history:\n${convHistory}` : "")
       + (notebookContext ? `\n\n${notebookContext}` : "");
 
-    const raw = await this.provider.json(query, instructions);
+    let raw: unknown;
+    try {
+      raw = await this.provider.json(query, instructions);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.toolSet.note.save(`error-${this.stepCount}`, {
+        error: errorMsg,
+      });
+      return {
+        type: "thinking",
+        content: `LLM call failed: ${errorMsg}. Retrying...`,
+      };
+    }
     const result = stepSchema.parse(raw);
 
     if (result.type === "research" && result.query && this.toolSet.webSearch) {

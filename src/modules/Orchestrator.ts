@@ -5,6 +5,7 @@ import type { KVCache } from "#src/types/kvCache.ts";
 import { composeWebSearch } from "#src/modules/ProviderFactory.ts";
 import { AgentFactory } from "#src/modules/AgentFactory.ts";
 import type { AgentInstance } from "#src/modules/AgentFactory.ts";
+import type { AgentOutput } from "#src/modules/AgentWrapper.ts";
 import { NoteToolAdapter } from "#src/service/NoteToolAdapter.ts";
 
 const CONVERSATION_SESSION_ID = "conv-session";
@@ -103,7 +104,7 @@ export class Orchestrator {
 
     const convHistory = this.formatConversationHistory(convSession);
 
-    const researchResults = await Promise.all(
+    const settled = await Promise.allSettled(
       agents.map(async (agent) => {
         this.session.init(agent.sessionId);
         const output = await agent.wrapper.run(query, convHistory);
@@ -111,6 +112,20 @@ export class Orchestrator {
         return output;
       }),
     );
+
+    const researchResults = settled
+      .filter((r): r is PromiseFulfilledResult<AgentOutput> => r.status === "fulfilled")
+      .map((r) => r.value);
+
+    const failedCount = settled.filter((r) => r.status === "rejected").length;
+    if (failedCount > 0) {
+      this.tui.warn(`${failedCount} agent(s) failed. Continuing with ${researchResults.length} result(s).`);
+    }
+
+    if (researchResults.length === 0) {
+      this.tui.output("All research agents failed. Please try again.");
+      return;
+    }
 
     this.tui.clear();
 
