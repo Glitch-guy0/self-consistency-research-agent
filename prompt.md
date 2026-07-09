@@ -1,12 +1,20 @@
-## for ituimanager
-- add a composite pattern to this class called TerminalStyling (come up with a better name with same meaning)
-- this will be optional to ituimanager
-- this holds interface be like:
-  - render({?color, ?bgcolor, ?opacity}) public => this is for providing control for user if he needs more control
-  - success public wrapper internally calling this.render
-  - fail public wrapper
-  - warning public wrapper
-
-
-- this will be optional to ituimanager and can be replasable with any other chalk like library
-- if chalk provided then use it else just render to terminal directly.
+## fixes from epic retrospective need to be addressed
+- Zod coupled at hexagonal boundary — accepted decision, but leaks port abstraction
+- Server-side structured output deferred (2.2) — Zod validation is client-only, no OpenAI text.format passed
+-  Authless requests when key missing (2.3) — relies entirely on 2.4 to gate composition; bug in factory = hard-to-debug 401s
+  - There is no auth in this purely terminal session based
+- No dev notes captured — difficulties may exist but aren't documented, risking repeated mistakes
+  - this will go at the end will document complete implementation and remove all intermediate planned files
+- Spec sketches were inaccurate — 3.1 and 3.5 both had render() missing the text param, requiring on-the-spot correction
+- Newline/line-clearing bugs across 3 stories — 3.1, 3.2, 3.3 all needed patches around \n handling and line overwriting
+- Dynamic chalk access via unknown cast — type system workaround, not ideal
+  - search through documentation or websearch and update this.
+- No max-iteration guard on CoT loop (4.2) — infinite loop if LLM never produces type:"output"
+  - limit the internal iteration to **30** max
+- No context-window boundary check (4.2) — large inputs may exceed provider limit
+  - user input is limited to 500 chars max.
+  - exceeding throw clearable warning on the termanal saying "500 chars max, please ask one question at a time"
+- All agents share same LLM config (4.3) — cross-model diversity requires manual overrides
+  - llm config can be configured during it's object creation
+- Research outputs not persisted to conversation (4.4) — invisible in persistent history
+  - invoke technical writer to document the project

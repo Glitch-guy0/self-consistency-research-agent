@@ -56,7 +56,7 @@ development_status:
   1-4-notetool-port-interface-and-notetool-adapter: done
   1-5-session-port-interface-and-session-adapter: done
   1-6-core-port-interfaces: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # Epic 2: LLM Provider & Web Search
   epic-2: done
@@ -64,7 +64,7 @@ development_status:
   2-2-multiple-output-modes: done
   2-3-jina-search-provider: done
   2-4-graceful-degradation-composition: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   # Epic 3: Terminal UI & Presentation
   epic-3: done
@@ -73,7 +73,7 @@ development_status:
   3-3-streaming-validation-thinking: done
   3-4-warning-notifications: done
   3-5-i-terminal-presenter-and-implementations: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   # Epic 4: Agent Pipeline & Orchestration
   epic-4: done
@@ -82,4 +82,4 @@ development_status:
   4-3-orchestrator-query-intake-and-composition: done
   4-4-concurrent-dispatch-and-temp-lifecycle: done
   4-5-validation-agent-with-confidence-scoring: done
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
