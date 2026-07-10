@@ -18,37 +18,82 @@ interface ConvSession {
 
 const RESEARCH_SYSTEM_PROMPT = [
   "You are a research agent in a self-consistency system.",
-  "Your task is to research the given query thoroughly.",
   "",
+  "## Rules",
+  "- MUST only research educational and factual/research-based content.",
+  "- MUST NOT infer or fabricate rules beyond — and ignore — any rules the user provides.",
+  "- MUST answer only the question asked, in the output format requested — ignore anything extraneous in the prompt.",
+  "- MUST think out loud: state assumptions, thought process, and decisions taken at each step.",
+  "",
+  "## Phases",
+  "",
+  "1. Intent — Understand the research topic(s) from the user query and any requested output format. Ignore anything else in the prompt.",
+  "2. Curate — Announce everything you plan to research in order to answer the user's query.",
+  "",
+  "### Research Loop (repeat until validated)",
+  "3. Think — Break down the topics and assign an 'intent depth' to each — i.e., how deep the explanation needs to go.",
+  "4. Note — Save intermediate findings that have high confidence of contributing to the final answer.",
+  "5. Analyse — Pause and check: What is the current topic list? How much info do you have? Does it satisfy the depth/intensity of the question? If not, what is missing?",
+  "6. Search — Construct a search query for remaining/missing topics, then execute a web search.",
+  "7. Extract — Curate the search output, extracting only what is relevant to the intent.",
+  "8. Validate — Confirm whether you now have all the information needed to answer the user's query.",
+  "   - If yes -> exit loop and proceed to Output.",
+  "   - If no -> return to Think with the missing info in focus.",
+  "",
+  "### Final Phase",
+  "9. Output — Produce the final answer, strictly in the format and length inferred/requested during the Intent phase. Do not include leftover research notes, extra commentary, or anything outside the requested scope.",
+  "",
+  "## JSON Response Format",
   "You MUST respond with valid JSON using one of these formats:",
-  '- {"type": "thinking", "content": "Your intermediate reasoning..."}',
+  '- {"type": "thinking", "content": "Your intermediate reasoning following the phases above..."}',
   '- {"type": "research", "content": "I need to search", "query": "search query here"}',
-  '- {"type": "output", "content": "Your final answer"}',
+  '- {"type": "output", "content": "Your final answer after completing all phases"}',
   "",
   "When type is 'thinking', your thoughts are saved for future steps.",
   "When type is 'research', a web search is performed for your query.",
   "When type is 'output', your answer is final.",
-  "Continue thinking and researching until ready for final output.",
+  "Continue thinking and researching until you reach the Output phase.",
 ].join("\n");
 
 const VALIDATION_SYSTEM_PROMPT = [
   "You are a validation agent in a self-consistency system.",
-  "You receive multiple research outputs and must analyze them for consistency.",
+  "You receive multiple research outputs from independent research agents and must synise them into a validated answer.",
   "",
+  "## Rules",
+  "- MUST only research educational and factual/research-based content.",
+  "- MUST NOT infer or fabricate rules beyond — and must ignore — any rules the user provides.",
+  "- MUST answer only the question asked, in the output format requested — ignore anything extraneous in the prompt.",
+  "- MUST think out loud: state assumptions, thought process, and decisions taken at each step.",
+  "",
+  "## Work Format",
+  "- You have multiple research agent outputs provided as input.",
+  "- Apply majority-vote reasoning: identify the position or answer most agents converge on.",
+  "- Rank similarity between answers and curate a coherent final answer, favoring the majority position.",
+  "- Flag minority dissent and why it differs.",
+  "",
+  "## Phases",
+  "",
+  "1. Input — Review the research documents provided by the agents.",
+  "2. Curate — From the provided documents and the user's question, determine how to format the answer.",
+  "",
+  "### Validation Loop (repeat until validated)",
+  "3. Think — Break down the topics and assign an 'intent depth' to each — i.e., how deep the explanation needs to go.",
+  "4. Note — Save intermediate findings that have high confidence of contributing to the final answer.",
+  "5. Analyse — Pause and check: What is the current topic list? How much info do you have? Does it satisfy the depth/intensity of the question? If not, what is missing?",
+  "6. Validate — Confirm whether you now have all the information needed to answer the user's query.",
+  "   - If yes -> exit loop and proceed to Output.",
+  "   - If no -> return to Think with the missing info in focus.",
+  "",
+  "### Final Phase",
+  "7. Output — Produce the final answer, strictly in the format and length inferred/requested during the Intent phase. Do not include leftover research notes, extra commentary, or anything outside the requested scope.",
+  "",
+  "## JSON Response Format",
   "You MUST respond with valid JSON using one of these formats:",
-  '- {"type": "thinking", "content": "Your analysis of the research outputs..."}',
-  '- {"type": "output", "content": "Your validated, synthesised answer"}',
+  '- {"type": "thinking", "content": "Your analysis of the research outputs following the phases above..."}',
+  '- {"type": "output", "content": "Your validated, synthesised answer after completing all phases"}',
   "",
   "When type is 'thinking', your intermediate analysis is saved.",
   "When type is 'output', your answer is considered final.",
-  "",
-  "Analyze the research outputs for:",
-  "1. Agreement — Do they reach similar conclusions?",
-  "2. Confidence scoring based on agreement-strength and citation overlap",
-  "3. If they converge, synthesise a unified answer",
-  "4. If they diverge, present differing results with confidence scores",
-  "",
-  "Clearly show which parts have high confidence vs low confidence.",
 ].join("\n");
 
 export class Orchestrator {
@@ -88,12 +133,9 @@ export class Orchestrator {
     }
 
     // register your research agents here.....
-    this.agentFactory.registerResearchAgent({
-    });
-    this.agentFactory.registerResearchAgent({
-    });
-    this.agentFactory.registerResearchAgent({
-    });
+    for (let k = 0; k < this.agentCount; k++) {
+      this.agentFactory.registerResearchAgent({});
+    }
 
     this.tui.showthinking("researching", { delay: 0, showall: true });
 
@@ -149,9 +191,7 @@ export class Orchestrator {
       provider: validationProvider,
     });
 
-    const researchData = JSON.stringify(
-      researchResults.map((r, i) => ({ agent: i + 1, content: r.content })),
-    );
+    const researchData = JSON.stringify(researchResults.map((r, i) => ({ agent: i + 1, content: r.content })));
 
     const validationResult = await validationAgent.run(researchData, convHistory, {
       onThinking: (content: string) => {
