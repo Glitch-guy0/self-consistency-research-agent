@@ -88,13 +88,10 @@ export class Orchestrator {
     }
 
     this.agentFactory.registerResearchAgent({
-      model: 'qwen/qwen3-1.7b'
     });
     this.agentFactory.registerResearchAgent({
-      model: 'qwen/qwen3-1.7b'
     });
     this.agentFactory.registerResearchAgent({
-      model: 'qwen/qwen3-1.7b'
     });
 
     this.tui.showthinking("researching", { delay: 0, showall: true });
