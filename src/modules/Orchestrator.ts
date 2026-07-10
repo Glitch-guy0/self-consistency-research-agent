@@ -87,6 +87,7 @@ export class Orchestrator {
       this.tui.warn(webSearchComposition.warning);
     }
 
+    // register your research agents here.....
     this.agentFactory.registerResearchAgent({
     });
     this.agentFactory.registerResearchAgent({
@@ -139,6 +140,8 @@ export class Orchestrator {
     this.session.init(VALIDATION_SESSION_ID);
 
     const validationProvider = new LLMProvider();
+
+    // update validation agent here
     const validationAgent = this.agentFactory.createValidationAgent({
       tools: { note: validationNoteTool },
       systemPrompt: VALIDATION_SYSTEM_PROMPT,
